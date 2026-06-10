@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.015em;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* HIGH DENSITY STRUCTURAL COMPRESSION (Theme-specific overrides) */
+
+/* Reduce spacing on layout wrappers and lists */
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem !important; /* Compounded spacing compaction */
+}
+.space-y-5 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem !important;
+}
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.625rem !important;
+}
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem !important;
+}
+.gap-6 {
+  gap: 1rem !important;
+}
+.gap-5 {
+  gap: 0.75rem !important;
+}
+.gap-4 {
+  gap: 0.625rem !important;
+}
+
+/* Compact padding for cards and sections */
+.p-8 {
+  padding: 1rem !important; /* compact outer container padding */
+}
+.p-6 {
+  padding: 0.75rem !important; /* compact card content padding */
+}
+.p-5 {
+  padding: 0.625rem !important; /* compact statistics & small widget padding */
+}
+.p-4 {
+  padding: 0.5rem !important;
+}
+.px-8 {
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+/* Tighten border-radius to align with the high-density sharp aesthetic */
+.rounded-2xl {
+  border-radius: 0.5rem !important; /* tighter, sharper edges */
+}
+.rounded-xl {
+  border-radius: 0.375rem !important; /* 6px crisp corners */
+}
+.rounded-lg {
+  border-radius: 0.25rem !important; /* 4px */
+}
+
+/* Compact headers and lists styling */
+.h-16 {
+  height: 3.25rem !important; /* slightly thinner navbar */
+}
+
+/* High-density input elements and buttons */
+input, select, textarea {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  padding-left: 0.625rem !important;
+  padding-right: 0.625rem !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.75rem !important;
+}
+input[type="range"] {
+  padding: 0 !important;
+}
+button {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Compact Tables for Dense Data Presentation */
+th, td {
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  font-size: 0.725rem !important; /* smaller, clean and scannable fonts */
+}
+
+thead th {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+  background-color: var(--color-slate-50) !important;
+  font-weight: 700 !important;
+  color: var(--color-slate-500) !important;
+  border-bottom: 1px solid var(--color-slate-200) !important;
+}
+
+/* Custom Minimalist and Precise Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate-300);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-slate-400);
+}
+
+/* Custom animation classes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.99) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
