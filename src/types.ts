@@ -77,6 +77,51 @@ export interface ProyekPembangunan {
   status: 'Perencanaan' | 'Konstruksi' | 'Selesai';
 }
 
+export interface RiwayatKepangkatan {
+  id: string;
+  golongan: string;
+  pangkat: string;
+  tmt: string;
+  noSk: string;
+}
+
+export interface RiwayatKgb {
+  id: string;
+  gajiPokok: number;
+  tmt: string;
+  noSk: string;
+}
+
+export interface RiwayatPendidikan {
+  id: string;
+  tingkat: string;
+  institusi: string;
+  jurusan?: string;
+  tahunLulus: string;
+}
+
+export interface RiwayatOrangTua {
+  id: string;
+  nama: string;
+  hubungan: 'Ayah' | 'Ibu';
+  pekerjaan?: string;
+}
+
+export interface RiwayatPasangan {
+  id: string;
+  nama: string;
+  tglMenikah?: string;
+  pekerjaan?: string;
+}
+
+export interface RiwayatAnak {
+  id: string;
+  nama: string;
+  tglLahir?: string;
+  jenisKelamin: 'Laki-laki' | 'Perempuan';
+  pendidikan?: string;
+}
+
 export interface Personel {
   id: string;
   nip: string;
@@ -87,6 +132,17 @@ export interface Personel {
   telepon?: string;
   email?: string;
   foto?: string;
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  jenisKelamin?: 'Laki-laki' | 'Perempuan';
+  agama?: string;
+  alamat?: string;
+  riwayatKepangkatan?: RiwayatKepangkatan[];
+  riwayatKgb?: RiwayatKgb[];
+  riwayatPendidikan?: RiwayatPendidikan[];
+  riwayatOrangTua?: RiwayatOrangTua[];
+  riwayatPasangan?: RiwayatPasangan[];
+  riwayatAnak?: RiwayatAnak[];
 }
 
 export interface Keuangan {

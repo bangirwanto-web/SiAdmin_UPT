@@ -28,7 +28,7 @@ import {
   Check,
   User as UserIcon
 } from 'lucide-react';
-import { User, Surat, InventarisAset, Personel, Keuangan } from '../types';
+import { User, Surat, InventarisAset, Personel, Keuangan, RiwayatKepangkatan, RiwayatKgb, RiwayatPendidikan, RiwayatOrangTua, RiwayatPasangan, RiwayatAnak } from '../types';
 
 interface PenatausahaanProps {
   currentUser: User;
@@ -64,6 +64,9 @@ export default function Penatausahaan({
       onSubTabChange(tab);
     }
   };
+
+  // State for Chart categories on main dashboard Overview
+  const [activeChartCategory, setActiveChartCategory] = useState<'golongan' | 'gender' | 'agama' | 'pendidikan'>('golongan');
 
   // Search & Filters state
   const [suratSearch, setSuratSearch] = useState('');
@@ -119,6 +122,52 @@ export default function Penatausahaan({
   const [newPersTelepon, setNewPersTelepon] = useState('');
   const [newPersEmail, setNewPersEmail] = useState('');
   const [newPersFoto, setNewPersFoto] = useState('');
+  
+  // Custom Detail Fields for editing
+  const [newPersTempatLahir, setNewPersTempatLahir] = useState('');
+  const [newPersTanggalLahir, setNewPersTanggalLahir] = useState('');
+  const [newPersJenisKelamin, setNewPersJenisKelamin] = useState<'Laki-laki' | 'Perempuan'>('Laki-laki');
+  const [newPersAgama, setNewPersAgama] = useState('');
+  const [newPersAlamat, setNewPersAlamat] = useState('');
+  
+  // Custom History Arrays
+  const [newPersRiwayatKepangkatan, setNewPersRiwayatKepangkatan] = useState<RiwayatKepangkatan[]>([]);
+  const [newPersRiwayatKgb, setNewPersRiwayatKgb] = useState<RiwayatKgb[]>([]);
+  const [newPersRiwayatPendidikan, setNewPersRiwayatPendidikan] = useState<RiwayatPendidikan[]>([]);
+  const [newPersRiwayatOrangTua, setNewPersRiwayatOrangTua] = useState<RiwayatOrangTua[]>([]);
+  const [newPersRiwayatPasangan, setNewPersRiwayatPasangan] = useState<RiwayatPasangan[]>([]);
+  const [newPersRiwayatAnak, setNewPersRiwayatAnak] = useState<RiwayatAnak[]>([]);
+
+  // Sub-tab tracking inside personnel modal
+  const [activeModalSubTab, setActiveModalSubTab] = useState<'profil' | 'kepangkatan' | 'kgb' | 'pendidikan' | 'orangtua' | 'pasangan' | 'anak'>('profil');
+
+  // Temporary fields for adding single sub-history details
+  const [tempKepangkatanGolongan, setTempKepangkatanGolongan] = useState('III-a');
+  const [tempKepangkatanPangkat, setTempKepangkatanPangkat] = useState('');
+  const [tempKepangkatanTmt, setTempKepangkatanTmt] = useState('');
+  const [tempKepangkatanNoSk, setTempKepangkatanNoSk] = useState('');
+
+  const [tempKgbGaji, setTempKgbGaji] = useState<number>(0);
+  const [tempKgbTmt, setTempKgbTmt] = useState('');
+  const [tempKgbNoSk, setTempKgbNoSk] = useState('');
+
+  const [tempPendidikanTingkat, setTempPendidikanTingkat] = useState('S1');
+  const [tempPendidikanInstitusi, setTempPendidikanInstitusi] = useState('');
+  const [tempPendidikanJurusan, setTempPendidikanJurusan] = useState('');
+  const [tempPendidikanTahun, setTempPendidikanTahun] = useState('');
+
+  const [tempOrangTuaNama, setTempOrangTuaNama] = useState('');
+  const [tempOrangTuaHubungan, setTempOrangTuaHubungan] = useState<'Ayah' | 'Ibu'>('Ayah');
+  const [tempOrangTuaPekerjaan, setTempOrangTuaPekerjaan] = useState('');
+
+  const [tempPasanganNama, setTempPasanganNama] = useState('');
+  const [tempPasanganTglMenikah, setTempPasanganTglMenikah] = useState('');
+  const [tempPasanganPekerjaan, setTempPasanganPekerjaan] = useState('');
+
+  const [tempAnakNama, setTempAnakNama] = useState('');
+  const [tempAnakTglLahir, setTempAnakTglLahir] = useState('');
+  const [tempAnakJenisKelamin, setTempAnakJenisKelamin] = useState<'Laki-laki' | 'Perempuan'>('Laki-laki');
+  const [tempAnakPendidikan, setTempAnakPendidikan] = useState('');
 
   // New Keuangan Form State
   const [newKeuNoBukti, setNewKeuNoBukti] = useState('');
@@ -211,6 +260,21 @@ export default function Penatausahaan({
     setNewPersTelepon(pers.telepon === '-' ? '' : pers.telepon);
     setNewPersEmail(pers.email === '-' ? '' : pers.email);
     setNewPersFoto(pers.foto || '');
+    
+    // Custom sub-fields
+    setNewPersTempatLahir(pers.tempatLahir || '');
+    setNewPersTanggalLahir(pers.tanggalLahir || '');
+    setNewPersJenisKelamin(pers.jenisKelamin || 'Laki-laki');
+    setNewPersAgama(pers.agama || '');
+    setNewPersAlamat(pers.alamat || '');
+    setNewPersRiwayatKepangkatan(pers.riwayatKepangkatan || []);
+    setNewPersRiwayatKgb(pers.riwayatKgb || []);
+    setNewPersRiwayatPendidikan(pers.riwayatPendidikan || []);
+    setNewPersRiwayatOrangTua(pers.riwayatOrangTua || []);
+    setNewPersRiwayatPasangan(pers.riwayatPasangan || []);
+    setNewPersRiwayatAnak(pers.riwayatAnak || []);
+    
+    setActiveModalSubTab('profil');
     setIsPersonelModalOpen(true);
   };
 
@@ -224,6 +288,21 @@ export default function Penatausahaan({
     setNewPersTelepon('');
     setNewPersEmail('');
     setNewPersFoto('');
+    
+    // Custom sub-fields
+    setNewPersTempatLahir('');
+    setNewPersTanggalLahir('');
+    setNewPersJenisKelamin('Laki-laki');
+    setNewPersAgama('');
+    setNewPersAlamat('');
+    setNewPersRiwayatKepangkatan([]);
+    setNewPersRiwayatKgb([]);
+    setNewPersRiwayatPendidikan([]);
+    setNewPersRiwayatOrangTua([]);
+    setNewPersRiwayatPasangan([]);
+    setNewPersRiwayatAnak([]);
+    
+    setActiveModalSubTab('profil');
     setIsPersonelModalOpen(true);
   };
 
@@ -362,7 +441,18 @@ export default function Penatausahaan({
       statusKepegawaian: newPersStatus,
       telepon: newPersTelepon || '-',
       email: newPersEmail || '-',
-      foto: newPersFoto || ''
+      foto: newPersFoto || '',
+      tempatLahir: newPersTempatLahir || '-',
+      tanggalLahir: newPersTanggalLahir || '-',
+      jenisKelamin: newPersJenisKelamin,
+      agama: newPersAgama || '-',
+      alamat: newPersAlamat || '-',
+      riwayatKepangkatan: newPersRiwayatKepangkatan,
+      riwayatKgb: newPersRiwayatKgb,
+      riwayatPendidikan: newPersRiwayatPendidikan,
+      riwayatOrangTua: newPersRiwayatOrangTua,
+      riwayatPasangan: newPersRiwayatPasangan,
+      riwayatAnak: newPersRiwayatAnak
     };
 
     if (editingPersonelId) {
@@ -382,12 +472,127 @@ export default function Penatausahaan({
     setNewPersTelepon('');
     setNewPersEmail('');
     setNewPersFoto('');
+    setNewPersTempatLahir('');
+    setNewPersTanggalLahir('');
+    setNewPersJenisKelamin('Laki-laki');
+    setNewPersAgama('');
+    setNewPersRiwayatKepangkatan([]);
+    setNewPersRiwayatKgb([]);
+    setNewPersRiwayatPendidikan([]);
+    setNewPersRiwayatOrangTua([]);
+    setNewPersRiwayatPasangan([]);
+    setNewPersRiwayatAnak([]);
   };
 
   const handleDeletePersonel = (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus pegawai ini dari data Kepegawaian internal?')) {
       setPersonelList(personelList.filter(p => p.id !== id));
     }
+  };
+
+  // Append helpers for Personnel sub tabs
+  const addKepangkatanRow = () => {
+    if (!tempKepangkatanPangkat) {
+      alert("Mohon masukkan nama pangkat.");
+      return;
+    }
+    const newRow: RiwayatKepangkatan = {
+      id: `kep-${Date.now()}`,
+      golongan: tempKepangkatanGolongan,
+      pangkat: tempKepangkatanPangkat,
+      tmt: tempKepangkatanTmt || '-',
+      noSk: tempKepangkatanNoSk || '-'
+    };
+    setNewPersRiwayatKepangkatan([...newPersRiwayatKepangkatan, newRow]);
+    setTempKepangkatanPangkat('');
+    setTempKepangkatanTmt('');
+    setTempKepangkatanNoSk('');
+  };
+
+  const addKgbRow = () => {
+    if (tempKgbGaji <= 0) {
+      alert("Mohon masukkan nominal Gaji Pokok.");
+      return;
+    }
+    const newRow: RiwayatKgb = {
+      id: `kgb-${Date.now()}`,
+      gajiPokok: Number(tempKgbGaji),
+      tmt: tempKgbTmt || '-',
+      noSk: tempKgbNoSk || '-'
+    };
+    setNewPersRiwayatKgb([...newPersRiwayatKgb, newRow]);
+    setTempKgbGaji(0);
+    setTempKgbTmt('');
+    setTempKgbNoSk('');
+  };
+
+  const addPendidikanRow = () => {
+    if (!tempPendidikanInstitusi) {
+      alert("Mohon masukkan nama institusi/sekolah.");
+      return;
+    }
+    const newRow: RiwayatPendidikan = {
+      id: `edu-${Date.now()}`,
+      tingkat: tempPendidikanTingkat,
+      institusi: tempPendidikanInstitusi,
+      jurusan: tempPendidikanJurusan || '-',
+      tahunLulus: tempPendidikanTahun || '-'
+    };
+    setNewPersRiwayatPendidikan([...newPersRiwayatPendidikan, newRow]);
+    setTempPendidikanInstitusi('');
+    setTempPendidikanJurusan('');
+    setTempPendidikanTahun('');
+  };
+
+  const addOrangTuaRow = () => {
+    if (!tempOrangTuaNama) {
+      alert("Mohon masukkan nama orang tua.");
+      return;
+    }
+    const newRow: RiwayatOrangTua = {
+      id: `ortu-${Date.now()}`,
+      nama: tempOrangTuaNama,
+      hubungan: tempOrangTuaHubungan,
+      pekerjaan: tempOrangTuaPekerjaan || '-'
+    };
+    setNewPersRiwayatOrangTua([...newPersRiwayatOrangTua, newRow]);
+    setTempOrangTuaNama('');
+    setTempOrangTuaPekerjaan('');
+  };
+
+  const addPasanganRow = () => {
+    if (!tempPasanganNama) {
+      alert("Mohon masukkan nama pasangan.");
+      return;
+    }
+    const newRow: RiwayatPasangan = {
+      id: `pas-${Date.now()}`,
+      nama: tempPasanganNama,
+      tglMenikah: tempPasanganTglMenikah || '-',
+      pekerjaan: tempPasanganPekerjaan || '-'
+    };
+    setNewPersRiwayatPasangan([...newPersRiwayatPasangan, newRow]);
+    setTempPasanganNama('');
+    setTempPasanganTglMenikah('');
+    setTempPasanganPekerjaan('');
+  };
+
+  const addAnakRow = () => {
+    if (!tempAnakNama) {
+      alert("Mohon masukkan nama anak.");
+      return;
+    }
+    const newRow: RiwayatAnak = {
+      id: `ank-${Date.now()}`,
+      nama: tempAnakNama,
+      tglLahir: tempAnakTglLahir || '-',
+      jenisKelamin: tempAnakJenisKelamin,
+      pendidikan: tempAnakPendidikan || '-'
+    };
+    setNewPersRiwayatAnak([...newPersRiwayatAnak, newRow]);
+    setTempAnakNama('');
+    setTempAnakTglLahir('');
+    setTempAnakPendidikan('');
   };
 
   const handleAddKeuangan = (e: React.FormEvent) => {
@@ -569,6 +774,109 @@ export default function Penatausahaan({
     return Math.max(...golonganCounts.map(item => item.count));
   }, [golonganCounts]);
 
+  const genderCounts = useMemo(() => {
+    const counts: { [key: string]: number } = { 'Laki-laki': 0, 'Perempuan': 0 };
+    personelList.forEach(p => {
+      const key = p.jenisKelamin || 'Laki-laki';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, count]) => ({
+      name,
+      count,
+      rank: name === 'Laki-laki' ? 2 : 1
+    }));
+  }, [personelList]);
+
+  const agamaCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    personelList.forEach(p => {
+      const key = p.agama || 'Tidak Terdata';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        rank: name === 'Islam' ? 6 : name.includes('Kristen') ? 5 : name === 'Katolik' ? 4 : name === 'Hindu' ? 3 : name === 'Buddha' ? 2 : 1
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [personelList]);
+
+  const pendidikanCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    
+    const getHighestPendidikan = (p: Personel): string => {
+      if (!p.riwayatPendidikan || p.riwayatPendidikan.length === 0) {
+        return 'Tidak Terdata';
+      }
+      const ranks: { [key: string]: number } = {
+        'S3': 9,
+        'S2': 8,
+        'S1': 7,
+        'D4': 6,
+        'D3': 5,
+        'D1': 4,
+        'SMA': 3,
+        'SMP': 2,
+        'SD': 1
+      };
+      let highest = p.riwayatPendidikan[0];
+      let highestRank = ranks[highest.tingkat] || 0;
+      p.riwayatPendidikan.forEach(edu => {
+        const r = ranks[edu.tingkat] || 0;
+        if (r > highestRank) {
+          highestRank = r;
+          highest = edu;
+        }
+      });
+      return highest.tingkat;
+    };
+
+    personelList.forEach(p => {
+      const key = getHighestPendidikan(p);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const educationRank = (eduName: string): number => {
+      const ranks: { [key: string]: number } = {
+        'S3': 9,
+        'S2': 8,
+        'S1': 7,
+        'D4': 6,
+        'D3': 5,
+        'D1': 4,
+        'SMA': 3,
+        'SMP': 2,
+        'SD': 1,
+        'Tidak Terdata': 0
+      };
+      return ranks[eduName] || 0;
+    };
+
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, rank: educationRank(name) }))
+      .sort((a, b) => b.rank - a.rank);
+  }, [personelList]);
+
+  const currentChartData = useMemo(() => {
+    switch (activeChartCategory) {
+      case 'gender':
+        return genderCounts;
+      case 'agama':
+        return agamaCounts;
+      case 'pendidikan':
+        return pendidikanCounts;
+      case 'golongan':
+      default:
+        return golonganCounts;
+    }
+  }, [activeChartCategory, golonganCounts, genderCounts, agamaCounts, pendidikanCounts]);
+
+  const maxChartCount = useMemo(() => {
+    if (currentChartData.length === 0) return 1;
+    return Math.max(...currentChartData.map(item => item.count));
+  }, [currentChartData]);
+
   const filteredKeuangan = keuanganList.filter(k => {
     const matchesSearch = k.uraian.toLowerCase().includes(keuanganSearch.toLowerCase()) ||
                           k.nomorBukti.toLowerCase().includes(keuanganSearch.toLowerCase()) ||
@@ -686,48 +994,139 @@ export default function Penatausahaan({
             </div>
           </div>
 
-          {/* Chart Golongan Pegawai berdasarkan tingkatan kedinasan */}
+          {/* Chart Pegawai Berdasarkan Golongan, Jenis Kelamin, Agama, dan Pendidikan */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
-              <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-50 pb-4">
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-800">Statistik Penyebaran Golongan Pegawai</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Analisis komposisi kepangkatan staf internal UPTD berdasarkan urutan kedinasan resmi</p>
+                  <h3 className="font-extrabold text-sm text-slate-800">
+                    {activeChartCategory === 'golongan' && 'Statistik Penyebaran Golongan Pegawai'}
+                    {activeChartCategory === 'gender' && 'Statistik Jenis Kelamin Pegawai'}
+                    {activeChartCategory === 'agama' && 'Statistik Distribusi Agama Pegawai'}
+                    {activeChartCategory === 'pendidikan' && 'Statistik Tingkat Pendidikan Tertinggi'}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {activeChartCategory === 'golongan' && 'Analisis komposisi kepangkatan staf internal UPTD berdasarkan urutan kedinasan resmi'}
+                    {activeChartCategory === 'gender' && 'Rasio perbandingan jumlah staf laki-laki dan perempuan di lingkungan kerja'}
+                    {activeChartCategory === 'agama' && 'Distribusi latar belakang kepercayaan/keagamaan personel aktif UPTD'}
+                    {activeChartCategory === 'pendidikan' && 'Tingkat kualifikasi akademik tertinggi yang dimiliki oleh personel aktif'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-500 font-mono">
-                  <Award className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{golonganCounts.length} Kategori</span>
+                <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 shrink-0 self-start sm:self-center overflow-x-auto max-w-full">
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartCategory('golongan')}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
+                      activeChartCategory === 'golongan'
+                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Golongan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartCategory('gender')}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
+                      activeChartCategory === 'gender'
+                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Gender
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartCategory('agama')}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
+                      activeChartCategory === 'agama'
+                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Agama
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveChartCategory('pendidikan')}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
+                      activeChartCategory === 'pendidikan'
+                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Pendidikan
+                  </button>
                 </div>
               </div>
 
-              {golonganCounts.length > 0 ? (
+              {currentChartData.length > 0 ? (
                 <div className="space-y-3.5">
-                  {golonganCounts.map((item) => {
+                  {currentChartData.map((item) => {
                     const percentage = Math.round((item.count / personelList.length) * 100);
-                    // Determine colors based on rank tier
+                    // Determine colors based on category/rank
                     let barColor = 'bg-blue-500';
-                    let bgLight = 'bg-blue-50';
+                    let badgeText = '';
                     let badgeColor = 'text-blue-700 bg-blue-50 border-blue-100';
-                    if (item.rank >= 14) {
-                      barColor = 'bg-indigo-600';
-                      bgLight = 'bg-indigo-50/70';
-                      badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
-                    } else if (item.rank >= 10) {
-                      barColor = 'bg-emerald-600';
-                      bgLight = 'bg-emerald-50/70';
-                      badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
-                    } else if (item.rank >= 6) {
-                      barColor = 'bg-purple-600';
-                      bgLight = 'bg-purple-50/70';
-                      badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
-                    } else if (item.rank >= 2) {
-                      barColor = 'bg-amber-600';
-                      bgLight = 'bg-amber-50/70';
-                      badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
-                    } else {
-                      barColor = 'bg-slate-500';
-                      bgLight = 'bg-slate-50';
-                      badgeColor = 'text-slate-600 bg-slate-50 border-slate-150';
+
+                    if (activeChartCategory === 'golongan') {
+                      badgeText = `Tier ${item.rank >= 14 ? 'IV' : item.rank >= 10 ? 'III' : item.rank >= 6 ? 'II' : item.rank >= 2 ? 'I' : 'Non-ASN'}`;
+                      if (item.rank >= 14) {
+                        barColor = 'bg-indigo-600';
+                        badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
+                      } else if (item.rank >= 10) {
+                        barColor = 'bg-emerald-600';
+                        badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                      } else if (item.rank >= 6) {
+                        barColor = 'bg-purple-600';
+                        badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
+                      } else if (item.rank >= 2) {
+                        barColor = 'bg-amber-600';
+                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
+                      } else {
+                        barColor = 'bg-slate-500';
+                        badgeColor = 'text-slate-600 bg-slate-50 border-slate-150';
+                      }
+                    } else if (activeChartCategory === 'gender') {
+                      if (item.name === 'Laki-laki') {
+                        barColor = 'bg-sky-500';
+                        badgeText = 'Pria';
+                        badgeColor = 'text-sky-700 bg-sky-50 border-sky-100';
+                      } else {
+                        barColor = 'bg-rose-500';
+                        badgeText = 'Wanita';
+                        badgeColor = 'text-rose-700 bg-rose-50 border-rose-100';
+                      }
+                    } else if (activeChartCategory === 'agama') {
+                      badgeText = 'Kepercayaan';
+                      if (item.name === 'Islam') {
+                        barColor = 'bg-emerald-600';
+                        badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                      } else if (item.name.includes('Kristen') || item.name.includes('Protestan')) {
+                        barColor = 'bg-indigo-500';
+                        badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
+                      } else if (item.name === 'Katolik') {
+                        barColor = 'bg-blue-600';
+                        badgeColor = 'text-blue-700 bg-blue-50 border-blue-100';
+                      } else if (item.name === 'Hindu' || item.name === 'Buddha') {
+                        barColor = 'bg-amber-500';
+                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
+                      } else {
+                        barColor = 'bg-slate-500';
+                        badgeColor = 'text-slate-600 bg-slate-50 border-slate-200';
+                      }
+                    } else if (activeChartCategory === 'pendidikan') {
+                      badgeText = item.name !== 'Tidak Terdata' ? 'Pendidikan' : 'Keterangan';
+                      if (item.rank >= 7) {
+                        barColor = 'bg-purple-600';
+                        badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
+                      } else if (item.rank >= 4) {
+                        barColor = 'bg-cyan-600';
+                        badgeColor = 'text-cyan-700 bg-cyan-50 border-cyan-100';
+                      } else {
+                        barColor = 'bg-amber-600';
+                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
+                      }
                     }
 
                     return (
@@ -736,18 +1135,18 @@ export default function Penatausahaan({
                           <div className="flex items-center gap-2">
                             <span className="font-extrabold text-slate-700 shrink-0 min-w-[140px] truncate">{item.name}</span>
                             <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded border ${badgeColor}`}>
-                              Tier {item.rank >= 14 ? 'IV' : item.rank >= 10 ? 'III' : item.rank >= 6 ? 'II' : item.rank >= 2 ? 'I' : 'Non-ASN'}
+                              {badgeText || item.name}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 font-mono">
-                            <span className="font-extrabold text-slate-800">{item.count} Orang</span>
+                          <div className="flex items-center gap-2 font-mono font-bold">
+                            <span className="text-slate-800">{item.count} Orang</span>
                             <span className="text-slate-400 text-[10px]">({percentage}%)</span>
                           </div>
                         </div>
                         <div className="h-4 w-full bg-slate-50 rounded-lg overflow-hidden flex items-center border border-slate-100/50">
                           <div 
                             className={`h-full ${barColor} rounded-r-sm transition-all duration-500`}
-                            style={{ width: `${(item.count / maxGolonganCount) * 100}%` }}
+                            style={{ width: `${(item.count / maxChartCount) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -756,7 +1155,7 @@ export default function Penatausahaan({
                 </div>
               ) : (
                 <div className="p-8 text-center text-slate-400">
-                  <p>Tidak ada data kepangkatan pegawai saat ini.</p>
+                  <p>Tidak ada data pegawai saat ini.</p>
                 </div>
               )}
             </div>
@@ -765,22 +1164,27 @@ export default function Penatausahaan({
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-2.5">
-                  <h3 className="font-extrabold text-sm text-slate-800">Analisis Jabatan & Kepangkatan</h3>
+                  <h3 className="font-extrabold text-sm text-slate-800">
+                    {activeChartCategory === 'golongan' && 'Analisis Jabatan & Kepangkatan'}
+                    {activeChartCategory === 'gender' && 'Analisis Demografi Gender'}
+                    {activeChartCategory === 'agama' && 'Analisis Keragaman Keagamaan'}
+                    {activeChartCategory === 'pendidikan' && 'Analisis Kualifikasi Akademik'}
+                  </h3>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Struktur Mayoritas</span>
+                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Mayoritas Data</span>
                     <p className="text-xs text-slate-700 font-bold leading-normal">
-                      {golonganCounts.length > 0 ? (
+                      {currentChartData.length > 0 ? (
                         <>
-                          Penyebaran kepangkatan tertinggi saat ini didominasi oleh golongan{' '}
+                          Kelompok dominan saat ini adalah{' '}
                           <span className="text-blue-600 font-extrabold">
-                            {golonganCounts.reduce((prev, current) => (prev.count > current.count) ? prev : current).name}
+                            {currentChartData.reduce((prev, current) => (prev.count > current.count) ? prev : current).name}
                           </span>{' '}
                           dengan total{' '}
                           <span className="font-extrabold text-slate-800">
-                            {golonganCounts.reduce((prev, current) => (prev.count > current.count) ? prev : current).count} pegawai
+                            {currentChartData.reduce((prev, current) => (prev.count > current.count) ? prev : current).count} pegawai
                           </span>.
                         </>
                       ) : (
@@ -790,33 +1194,26 @@ export default function Penatausahaan({
                   </div>
 
                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Komparasi Jenjang Jabatan</span>
+                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Breakdown Keseluruhan</span>
                     <div className="space-y-1.5 text-xs text-slate-600">
                       <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Pangkat Eselon (Tier III & IV)</span>
-                        <span className="font-extrabold text-slate-800">
+                        <span className="text-[10px]">Rasio Laki-laki & Perempuan</span>
+                        <span className="font-extrabold text-slate-800 font-mono">
+                          {personelList.filter(p => p.jenisKelamin === 'Laki-laki').length}L : {personelList.filter(p => p.jenisKelamin === 'Perempuan').length}P
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
+                        <span className="text-[10px]">Pendidikan S1 & Di Atasnya</span>
+                        <span className="font-extrabold text-slate-800 font-mono">
                           {personelList.filter(p => {
-                            const norm = p.golongan?.toLowerCase() || '';
-                            return norm.includes('iii') || norm.includes('iv');
+                            return p.riwayatPendidikan?.some(edu => ['S1', 'S2', 'S3'].includes(edu.tingkat));
                           }).length} Orang
                         </span>
                       </div>
                       <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Staf Pelaksana (Tier I & II)</span>
-                        <span className="font-extrabold text-slate-800">
-                          {personelList.filter(p => {
-                            const norm = p.golongan?.toLowerCase() || '';
-                            return norm.includes('i-') || norm.includes('ii-') || norm.includes('i/') || norm.includes('ii/');
-                          }).length} Orang
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Non-ASN / Honorer / Lainnya</span>
-                        <span className="font-extrabold text-slate-800">
-                          {personelList.filter(p => {
-                            const norm = p.golongan?.toLowerCase() || 'non-eselon';
-                            return norm.includes('non-eselon') || norm.includes('non-asn') || norm.includes('tanpa');
-                          }).length} Orang
+                        <span className="text-[10px]">Personel PNS Aktif</span>
+                        <span className="font-extrabold text-slate-800 font-mono">
+                          {personelList.filter(p => p.statusKepegawaian === 'PNS').length} Orang
                         </span>
                       </div>
                     </div>
@@ -1947,153 +2344,982 @@ export default function Penatausahaan({
       {/* ADM PERSONALIA MODAL */}
       {isPersonelModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
-            <div className="bg-slate-900 text-slate-100 p-4">
-              <h3 className="font-extrabold text-sm">
-                {editingPersonelId ? 'Ubah Rincian Pegawai' : 'Tambah Pegawai Internal'}
-              </h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Daftarkan personel baru ke database Kepegawaian</p>
-            </div>
-
-            <form onSubmit={handleAddPersonel} className="p-5 space-y-3.5">
-              {/* 1. Upload Foto Section */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 flex items-center gap-4">
-                <div className="relative w-14 h-14 rounded-full bg-slate-200 border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center">
-                  {newPersFoto ? (
-                    <img src={newPersFoto} alt="Preview Foto" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-6 h-6 text-slate-400" />
-                  )}
-                  {newPersFoto && (
-                    <button
-                      type="button"
-                      onClick={() => setNewPersFoto('')}
-                      className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-bold"
-                    >
-                      Hapus
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Foto Profil Pegawai</span>
-                  <div className="flex items-center gap-2">
-                    <label className="cursor-pointer bg-white hover:bg-slate-50 border border-slate-200 shadow-xs px-2.5 py-1 text-[11px] font-bold text-slate-700 rounded-lg transition flex items-center gap-1">
-                      <Image className="w-3 h-3 text-slate-500" />
-                      <span>Unggah Foto</span>
-                      <input 
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handlePhotoUpload}
-                      />
-                    </label>
-                    {newPersFoto && (
-                      <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                        <Check className="w-3 h-3" /> Terpilih
-                      </span>
-                    )}
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col md:flex-row h-[85vh] md:h-[700px]">
+            
+            {/* LEFT PROFILE SIDEBAR / CATEGORY SWITCHER */}
+            <div className="w-full md:w-64 bg-slate-900 text-slate-100 flex flex-col justify-between shrink-0 border-r border-slate-800">
+              <div className="p-4.5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-1.5 bg-blue-750 rounded-lg text-white">
+                    <Users className="w-4 h-4 text-sky-450" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-xs tracking-tight">
+                      {editingPersonelId ? 'Ubah Rincian Pegawai' : 'Tambah Pegawai Baru'}
+                    </h3>
+                    <p className="text-[9px] text-slate-400">Pemberkasan Arsip Kepegawaian</p>
                   </div>
                 </div>
+
+                {/* Vertical Tabs navigation */}
+                <nav className="space-y-1">
+                  {[
+                    { id: 'profil', label: 'Profil Pegawai', desc: 'Identitas & Biodata', icon: UserIcon, count: null },
+                    { id: 'kepangkatan', label: 'Riwayat Kepangkatan', desc: 'Jenjang Golongan/Pangkat', icon: Award, count: newPersRiwayatKepangkatan.length },
+                    { id: 'kgb', label: 'Riwayat KGB', desc: 'Kenaikan Gaji Berkala', icon: TrendingUp, count: newPersRiwayatKgb.length },
+                    { id: 'pendidikan', label: 'Riwayat Pendidikan', desc: 'Riwayat Studi Akademik', icon: BookOpen, count: newPersRiwayatPendidikan.length },
+                    { id: 'orangtua', label: 'Riwayat Orang Tua', desc: 'Data Orang Tua Kandung', icon: Users, count: newPersRiwayatOrangTua.length },
+                    { id: 'pasangan', label: 'Riwayat Pasangan', desc: 'Pernikahan / Suami / Istri', icon: CheckCircle, count: newPersRiwayatPasangan.length },
+                    { id: 'anak', label: 'Riwayat Anak', desc: 'Detail Anak / Tanggungan', icon: Plus, count: newPersRiwayatAnak.length },
+                  ].map((tab) => {
+                    const IconComp = tab.icon;
+                    const isActive = activeModalSubTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveModalSubTab(tab.id as any)}
+                        className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition-all group ${
+                          isActive 
+                            ? 'bg-blue-600 text-white font-bold shadow-xs' 
+                            : 'text-slate-400 hover:text-slate-150 hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                          <div className="truncate">
+                            <span className="block text-[11px] leading-tight font-bold">{tab.label}</span>
+                            <span className="block text-[8px] group-hover:text-slate-300 truncate mt-0.5" style={{ color: isActive ? '#93c5fd' : '#94a3b8' }}>
+                              {tab.desc}
+                            </span>
+                          </div>
+                        </div>
+                        {tab.count !== null && tab.count > 0 && (
+                          <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-lg ${isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                            {tab.count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
               </div>
 
-              {/* 2. Nama Lengkap */}
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Lengkap & Gelar</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Sri Hartati, S.H."
-                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                  value={newPersNama}
-                  onChange={(e) => setNewPersNama(e.target.value)}
-                />
+              {/* Informative footer */}
+              <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 text-[9px] text-slate-400 leading-relaxed font-mono">
+                Klik tombol "Simpan Perubahan" di pojok kanan bawah setelah selesai mengubah seluruh bagian.
+              </div>
+            </div>
+
+            {/* RIGHT SCROLLABLE CONTENT SECTION */}
+            <div className="flex-1 flex flex-col bg-slate-50 min-w-0 h-full">
+              <div className="flex-1 overflow-y-auto p-6">
+                
+                {activeModalSubTab === 'profil' && (
+                  /* ================= TAB 1: PROFIL PEGAWAI ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Profil & Identitas Pegawai</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Informasi fundamental identitas kedinasan dan kepribadian</p>
+                    </div>
+
+                    {/* Foto Profil Upload */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                      <div className="relative w-16 h-16 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        {newPersFoto ? (
+                          <img src={newPersFoto} alt="Preview Foto" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="w-7 h-7 text-slate-400" />
+                        )}
+                        {newPersFoto && (
+                          <button
+                            type="button"
+                            onClick={() => setNewPersFoto('')}
+                            className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-bold"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <span className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Unggah Foto Resmi</span>
+                        <p className="text-[9px] text-slate-400 leading-normal">Gunakan pasfoto berlatar belakang merah / biru (tipe JPG/PNG up to 2MB)</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <label className="cursor-pointer bg-slate-50 hover:bg-slate-100 border border-slate-200 shadow-sm px-2.5 py-1 text-[11px] font-bold text-slate-700 rounded-lg transition flex items-center gap-1.5">
+                            <Image className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Pilih Foto</span>
+                            <input 
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handlePhotoUpload}
+                            />
+                          </label>
+                          {newPersFoto && (
+                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                              <Check className="w-3 h-3" /> Berhasil Dimuat
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Lengkap & Gelar *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Nama lengkap beserta gelar akademik"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersNama}
+                          onChange={(e) => setNewPersNama(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nomor Induk Pegawai (NIP/NIPPPK) *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: 198208172009121003 atau '-'"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersNip}
+                          onChange={(e) => setNewPersNip(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Pegawai *</label>
+                        <select
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersStatus}
+                          onChange={(e: any) => setNewPersStatus(e.target.value)}
+                        >
+                          <option value="PNS">Aparatur PNS</option>
+                          <option value="PPPK">Pegawai PPPK</option>
+                          <option value="Honor Daerah">Honor Daerah</option>
+                          <option value="Kontrak">Tenaga Kontrak/Lainnya</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Golongan Kedinasan *</label>
+                        <select
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersGolongan}
+                          onChange={(e) => setNewPersGolongan(e.target.value)}
+                        >
+                          <option value="Non-Eselon">Non-ASN / Tanpa Golongan</option>
+                          <option value="I-a">Golongan I/a - Juru Muda</option>
+                          <option value="I-b">Golongan I/b - Juru Muda Tk. I</option>
+                          <option value="I-c">Golongan I/c - Juru</option>
+                          <option value="I-d">Golongan I/d - Juru Tk. I</option>
+                          <option value="II-a">Golongan II/a - Pengatur Muda</option>
+                          <option value="II-b">Golongan II/b - Pengatur Muda Tk. I</option>
+                          <option value="II-c">Golongan II/c - Pengatur</option>
+                          <option value="II-d">Golongan II/d - Pengatur Tk. I</option>
+                          <option value="III-a">Golongan III/a - Penata Muda</option>
+                          <option value="III-b">Golongan III/b - Penata Muda Tk. I</option>
+                          <option value="III-c">Golongan III/c - Penata</option>
+                          <option value="III-d">Golongan III/d - Penata Tk. I</option>
+                          <option value="IV-a">Golongan IV/a - Pembina</option>
+                          <option value="IV-b">Golongan IV/b - Pembina Tk. I</option>
+                          <option value="IV-c">Golongan IV/c - Pembina Utama Muda</option>
+                          <option value="IV-d">Golongan IV/d - Pembina Utama Madya</option>
+                          <option value="IV-e">Golongan IV/e - Pembina Utama</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jabatan Pokok *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Ka Subbag Tata Usaha"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersJabatan}
+                          onChange={(e) => setNewPersJabatan(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">No. Telepon Aktif</label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: 081234567890"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersTelepon}
+                          onChange={(e) => setNewPersTelepon(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Alamat Email Resmi</label>
+                        <input
+                          type="email"
+                          placeholder="Contoh: nama@sumutprov.go.id"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                          value={newPersEmail}
+                          onChange={(e) => setNewPersEmail(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* NEW FIELDS REQUESTED: profil pegawai (tempat lahir, tgl lahir, jenis kelamin, agama) */}
+                    <div className="border-t border-slate-200 pt-4">
+                      <h5 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Informasi Biodata Profil Pribadi</h5>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tempat Lahir</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Medan / Pematangsiantar"
+                            className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                            value={newPersTempatLahir}
+                            onChange={(e) => setNewPersTempatLahir(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tanggal Lahir</label>
+                          <input
+                            type="date"
+                            className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-700"
+                            value={newPersTanggalLahir}
+                            onChange={(e) => setNewPersTanggalLahir(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jenis Kelamin</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                            value={newPersJenisKelamin}
+                            onChange={(e: any) => setNewPersJenisKelamin(e.target.value)}
+                          >
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Agama</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800"
+                            value={newPersAgama}
+                            onChange={(e) => setNewPersAgama(e.target.value)}
+                          >
+                            <option value="">-- Pilih Agama --</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Kristen Protestan">Kristen Protestan</option>
+                            <option value="Katolik">Katolik</option>
+                            <option value="Hindu">Hindu</option>
+                            <option value="Buddha">Buddha</option>
+                            <option value="Khonghucu">Khonghucu</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Alamat Tempat Tinggal</label>
+                        <textarea
+                          placeholder="Masukkan alamat lengkap rumah tinggal saat ini"
+                          className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-slate-800 h-20 resize-none leading-relaxed"
+                          value={newPersAlamat}
+                          onChange={(e) => setNewPersAlamat(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'kepangkatan' && (
+                  /* ================= TAB 2: RIWAYAT KEPANGKATAN ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Riwayat Kepangkatan</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Daftar kenaikan pangkat dan golongan resmi Surat Keputusan (SK)</p>
+                    </div>
+
+                    {/* Array List */}
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Golongan</th>
+                            <th className="py-2.5 px-3">Nama Pangkat</th>
+                            <th className="py-2.5 px-3">TMT</th>
+                            <th className="py-2.5 px-3">Nomor SK</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatKepangkatan.length > 0 ? (
+                            newPersRiwayatKepangkatan.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 font-mono text-blue-600 font-bold">{row.golongan}</td>
+                                <td className="py-2 px-3">{row.pangkat}</td>
+                                <td className="py-2 px-3 font-mono text-slate-500">{row.tmt}</td>
+                                <td className="py-2 px-3 max-w-[125px] truncate text-slate-600">{row.noSk}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatKepangkatan(newPersRiwayatKepangkatan.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={5} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat kepangkatan yang terdaftar.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Add Inline Form */}
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Riwayat Kepangkatan Baru</span>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Golongan</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none"
+                            value={tempKepangkatanGolongan}
+                            onChange={(e) => setTempKepangkatanGolongan(e.target.value)}
+                          >
+                            <option value="I-a">I-a - Juru Muda</option>
+                            <option value="I-b">I-b - Juru Muda Tk. I</option>
+                            <option value="I-c">I-c - Juru</option>
+                            <option value="I-d">I-d - Juru Tk. I</option>
+                            <option value="II-a">II-a - Pengatur Muda</option>
+                            <option value="II-b">II-b - Pengatur Muda Tk. I</option>
+                            <option value="II-c">II-c - Pengatur</option>
+                            <option value="II-d">II-d - Pengatur Tk. I</option>
+                            <option value="III-a">III-a - Penata Muda</option>
+                            <option value="III-b">III-b - Penata Muda Tk. I</option>
+                            <option value="III-c">III-c - Penata</option>
+                            <option value="III-d">III-d - Penata Tk. I</option>
+                            <option value="IV-a">IV-a - Pembina</option>
+                            <option value="IV-b">IV-b - Pembina Tk. I</option>
+                            <option value="IV-c">IV-c - Pembina Utama Muda</option>
+                            <option value="IV-d">IV-d - Pembina Utama Madya</option>
+                            <option value="IV-e">IV-e - Pembina Utama</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Pangkat / Gelar</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Penata Muda"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempKepangkatanPangkat}
+                            onChange={(e) => setTempKepangkatanPangkat(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">TMT (Terhitung Mulai Tanggal)</label>
+                          <input
+                            type="date"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-700"
+                            value={tempKepangkatanTmt}
+                            onChange={(e) => setTempKepangkatanTmt(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nomor SK Resmi</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 821.2/121/UPTD-SDA/2026"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempKepangkatanNoSk}
+                            onChange={(e) => setTempKepangkatanNoSk(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addKepangkatanRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Tambahkan ke Daftar</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'kgb' && (
+                  /* ================= TAB 3: RIWAYAT KGB ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Riwayat Kenaikan Gaji Berkala (KGB)</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Catatan surat keputusan KGB penyesuaian nominal gaji pokok staf</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Gaji Pokok</th>
+                            <th className="py-2.5 px-3">TMT KGB</th>
+                            <th className="py-2.5 px-3">Nomor Surat SK KGB</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatKgb.length > 0 ? (
+                            newPersRiwayatKgb.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 text-emerald-600 font-bold">{formatRupiah(row.gajiPokok)}</td>
+                                <td className="py-2 px-3 font-mono text-slate-500">{row.tmt}</td>
+                                <td className="py-2 px-3 truncate max-w-[155px] text-slate-600">{row.noSk}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatKgb(newPersRiwayatKgb.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat KGB yang terdaftar.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Riwayat KGB Baru</span>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-1">
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Gaji Pokok Baru (Rp)</label>
+                          <input
+                            type="number"
+                            placeholder="Contoh: 3400000"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-slate-800"
+                            value={tempKgbGaji || ''}
+                            onChange={(e) => setTempKgbGaji(Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">TMT Gaji Berkala</label>
+                          <input
+                            type="date"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-700"
+                            value={tempKgbTmt}
+                            onChange={(e) => setTempKgbTmt(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nomor SK KGB</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 800/KGB-1241/2026"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempKgbNoSk}
+                            onChange={(e) => setTempKgbNoSk(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addKgbRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Tambahkan KGB</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'pendidikan' && (
+                  /* ================= TAB 4: RIWAYAT PENDIDIKAN ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Riwayat Pendidikan</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Pendidikan formal terakhir, penyesuaian ijazah dan kualifikasi</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Jenjang</th>
+                            <th className="py-2.5 px-3">Nama Lembaga Pendidikan</th>
+                            <th className="py-2.5 px-3">Jurusan / Bidang Studi</th>
+                            <th className="py-2.5 px-3">Tahun Lulus</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatPendidikan.length > 0 ? (
+                            newPersRiwayatPendidikan.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 font-black text-slate-800">{row.tingkat}</td>
+                                <td className="py-2 px-3">{row.institusi}</td>
+                                <td className="py-2 px-3 text-slate-500">{row.jurusan}</td>
+                                <td className="py-2 px-3 font-mono text-center text-slate-600">{row.tahunLulus}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatPendidikan(newPersRiwayatPendidikan.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={5} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat pendidikan studi yang terdaftar.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Riwayat Pendidikan Baru</span>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tingkat</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                            value={tempPendidikanTingkat}
+                            onChange={(e) => setTempPendidikanTingkat(e.target.value)}
+                          >
+                            <option value="SD">SD</option>
+                            <option value="SMP">SMP / MTs</option>
+                            <option value="SMA">SMA / MA / SMK</option>
+                            <option value="D1">Diploma I (D1)</option>
+                            <option value="D3">Diploma III (D3)</option>
+                            <option value="D4">Diploma IV (D4)</option>
+                            <option value="S1">Sarjana (S1)</option>
+                            <option value="S2">Magister (S2)</option>
+                            <option value="S3">Doktor (S3)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Institusi / Kampus</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: USU Medan"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempPendidikanInstitusi}
+                            onChange={(e) => setTempPendidikanInstitusi(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jurusan / Studi</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: S-1 Teknik Sipil"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempPendidikanJurusan}
+                            onChange={(e) => setTempPendidikanJurusan(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tahun Lulus</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 2018"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-center font-mono text-slate-800"
+                            value={tempPendidikanTahun}
+                            onChange={(e) => setTempPendidikanTahun(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addPendidikanRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Tambahkan Pendidikan</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'orangtua' && (
+                  /* ================= TAB 5: RIWAYAT ORANG TUA ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Riwayat & Data Orang Tua Kandung</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Informasi garis keturunan bapak dan ibu pegawai</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Hubungan Keluarga</th>
+                            <th className="py-2.5 px-3">Nama Lengkap Orang Tua</th>
+                            <th className="py-2.5 px-3">Profesi / Pekerjaan</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatOrangTua.length > 0 ? (
+                            newPersRiwayatOrangTua.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 font-bold text-slate-600">
+                                  <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                                    row.hubungan === 'Ayah' ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'
+                                  }`}>
+                                    {row.hubungan}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-3">{row.nama}</td>
+                                <td className="py-2 px-3 text-slate-500">{row.pekerjaan}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatOrangTua(newPersRiwayatOrangTua.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat data orang tua yang diinput.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Data Orang Tua</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Hubungan</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                            value={tempOrangTuaHubungan}
+                            onChange={(e: any) => setTempOrangTuaHubungan(e.target.value)}
+                          >
+                            <option value="Ayah">Ayah Kandung</option>
+                            <option value="Ibu">Ibu Kandung</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: H. Ahmad"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempOrangTuaNama}
+                            onChange={(e) => setTempOrangTuaNama(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pekerjaan</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Pensiunan PNS / RT"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempOrangTuaPekerjaan}
+                            onChange={(e) => setTempOrangTuaPekerjaan(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addOrangTuaRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Daftarkan Orang Tua</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'pasangan' && (
+                  /* ================= TAB 6: RIWAYAT PASANGAN ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-805">Riwayat Pasangan (Suami / Istri)</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Data pasangan sah pernikahan berekstensi tunjangan keluarga pegawai</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Nama Lengkap Pasangan</th>
+                            <th className="py-2.5 px-3">Tanggal Pernikahan</th>
+                            <th className="py-2.5 px-3">Profesi / Pekerjaan</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatPasangan.length > 0 ? (
+                            newPersRiwayatPasangan.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 font-bold text-slate-800">{row.nama}</td>
+                                <td className="py-2 px-3 font-mono text-slate-500">{row.tglMenikah}</td>
+                                <td className="py-2 px-3 text-slate-500">{row.pekerjaan}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatPasangan(newPersRiwayatPasangan.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat pasangan terdaftar.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Riwayat Marital Pasangan</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Suami / Istri</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Fatmawati"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempPasanganNama}
+                            onChange={(e) => setTempPasanganNama(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tanggal Pernikahan</label>
+                          <input
+                            type="date"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-700"
+                            value={tempPasanganTglMenikah}
+                            onChange={(e) => setTempPasanganTglMenikah(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pekerjaan Pasangan</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: Swasta / Wiraswasta"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempPasanganPekerjaan}
+                            onChange={(e) => setTempPasanganPekerjaan(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addPasanganRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Hubungkan Pasangan</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeModalSubTab === 'anak' && (
+                  /* ================= TAB 7: RIWAYAT ANAK ================= */
+                  <div className="space-y-5 animate-fade-in">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-805">Riwayat & Data Anak / Tanggungan</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Daftar anak kandung / anak angkat resmi masuk dalam sistem payroll/tanggungan</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden text-xs">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-extrabold text-[9px] uppercase tracking-wider text-left border-b border-slate-150">
+                            <th className="py-2.5 px-3">Nama Lengkap Anak</th>
+                            <th className="py-2.5 px-3">Tanggal Lahir</th>
+                            <th className="py-2.5 px-3">Jenis Kelamin</th>
+                            <th className="py-2.5 px-3">Pendidikan Terakhir</th>
+                            <th className="py-2.5 px-3 text-center">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {newPersRiwayatAnak.length > 0 ? (
+                            newPersRiwayatAnak.map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50/50">
+                                <td className="py-2 px-3 font-bold text-slate-800">{row.nama}</td>
+                                <td className="py-2 px-3 font-mono text-slate-500">{row.tglLahir}</td>
+                                <td className="py-2 px-3 text-slate-600">{row.jenisKelamin}</td>
+                                <td className="py-2 px-3 text-slate-500">{row.pendidikan}</td>
+                                <td className="py-2 px-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewPersRiwayatAnak(newPersRiwayatAnak.filter(item => item.id !== row.id))}
+                                    className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={5} className="py-6 text-center text-slate-400 font-medium">
+                                Belum ada riwayat anak yang terdaftar.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="bg-slate-100/70 p-4 rounded-xl border border-slate-200/55 space-y-3">
+                      <span className="block text-[10px] font-black text-blue-800 uppercase tracking-widest">Tambah Detail Anak (Dapat ditambahkan bila lebih dari satu)</span>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap Anak</label>
+                          <input
+                            type="text"
+                            placeholder="Nama Anak"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempAnakNama}
+                            onChange={(e) => setTempAnakNama(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+                          <input
+                            type="date"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-700"
+                            value={tempAnakTglLahir}
+                            onChange={(e) => setTempAnakTglLahir(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                          <select
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                            value={tempAnakJenisKelamin}
+                            onChange={(e: any) => setTempAnakJenisKelamin(e.target.value)}
+                          >
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pendidikan / Status</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: SD Kelas VI"
+                            className="w-full border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                            value={tempAnakPendidikan}
+                            onChange={(e) => setTempAnakPendidikan(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={addAnakRow}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="w-4 h-4 text-white" />
+                          <span>Daftarkan Anak</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
 
-              {/* 3. Status Kepegawaian & 4. NIP */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Kepegawaian</label>
-                  <select
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
-                    value={newPersStatus}
-                    onChange={(e: any) => setNewPersStatus(e.target.value)}
+              {/* STICKY ACTION FOOTER */}
+              <div className="bg-white border-t border-slate-150 p-4 shrink-0 flex items-center justify-between">
+                <span className="text-[10px] font-mono text-slate-400 font-bold hidden sm:inline">
+                  Drafting: {newPersNama || 'Pegawai Baru'} &bull; {newPersRiwayatKepangkatan.length} Kepangkatan
+                </span>
+                
+                <div className="flex gap-2 ml-auto p-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsPersonelModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
                   >
-                    <option value="PNS">Aparatur PNS</option>
-                    <option value="PPPK">Pegawai PPPK</option>
-                    <option value="Honor Daerah">Honor Daerah</option>
-                    <option value="Kontrak">Tenaga Kontrak/Lainnya</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">NIP Resmi</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 19820817..."
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersNip}
-                    onChange={(e) => setNewPersNip(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* 5. Pangkat & Golongan & 6. Jabatan */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pangkat / Golongan</label>
-                  <select
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
-                    value={newPersGolongan}
-                    onChange={(e) => setNewPersGolongan(e.target.value)}
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddPersonel}
+                    className="px-5 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-black shadow-sm transition"
                   >
-                    <option value="Non-Eselon">Non-ASN / Tanpa Golongan</option>
-                    <option value="Juru Muda / I-a">Golongan I/a - Juru Muda</option>
-                    <option value="Juru Muda Tk. I / I-b">Golongan I/b - Juru Muda Tk. I</option>
-                    <option value="Juru / I-c">Golongan I/c - Juru</option>
-                    <option value="Juru Tk. I / I-d">Golongan I/d - Juru Tk. I</option>
-                    <option value="Pengatur Muda / II-a">Golongan II/a - Pengatur Muda</option>
-                    <option value="Pengatur Muda Tk. I / II-b">Golongan II/b - Pengatur Muda Tk. I</option>
-                    <option value="Pengatur / II-c">Golongan II/c - Pengatur</option>
-                    <option value="Pengatur Tk. I / II-d">Golongan II/d - Pengatur Tk. I</option>
-                    <option value="Penata Muda / III-a">Golongan III/a - Penata Muda</option>
-                    <option value="Penata Muda Tk. I / III-b">Golongan III/b - Penata Muda Tk. I</option>
-                    <option value="Penata / III-c">Golongan III/c - Penata</option>
-                    <option value="Penata Tk. I / III-d">Golongan III/d - Penata Tk. I</option>
-                    <option value="Pembina / IV-a">Golongan IV/a - Pembina</option>
-                    <option value="Pembina Tk. I / IV-b">Golongan IV/b - Pembina Tk. I</option>
-                    <option value="Pembina Utama Muda / IV-c">Golongan IV/c - Pembina Utama Muda</option>
-                    <option value="Pembina Utama Madya / IV-d">Golongan IV/d - Pembina Utama Madya</option>
-                    <option value="Pembina Utama / IV-e">Golongan IV/e - Pembina Utama</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jabatan Pokok</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Ka Sub Unit OP"
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersJabatan}
-                    onChange={(e) => setNewPersJabatan(e.target.value)}
-                  />
+                    {editingPersonelId ? 'Simpan Perubahan' : 'Proses & Daftarkan'}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsPersonelModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
-                >
-                  {editingPersonelId ? 'Simpan Perubahan' : 'Tambah Pegawai'}
-                </button>
-              </div>
-            </form>
+            </div>
+
           </div>
         </div>
       )}
