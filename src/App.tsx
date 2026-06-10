@@ -176,13 +176,14 @@ export default function App() {
       case 'penatausahaan-personalia':
       case 'penatausahaan-aset':
       case 'penatausahaan-keuangan': {
-        const subTabMapping: Record<string, 'umum' | 'personalia' | 'aset' | 'keuangan'> = {
+        const subTabMapping: Record<string, 'overview' | 'umum' | 'personalia' | 'aset' | 'keuangan'> = {
+          'penatausahaan': 'overview',
           'penatausahaan-umum': 'umum',
           'penatausahaan-personalia': 'personalia',
           'penatausahaan-aset': 'aset',
           'penatausahaan-keuangan': 'keuangan',
         };
-        const currentSubTab = subTabMapping[activeTab] || 'umum';
+        const currentSubTab = subTabMapping[activeTab] || 'overview';
         return (
           <Penatausahaan 
             currentUser={currentUser}

@@ -163,11 +163,7 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
                     id={`btn-nav-${item.id}`}
                     disabled={!isAccessible}
                     onClick={() => {
-                      if (item.id === 'penatausahaan') {
-                        setActiveTab('penatausahaan-umum');
-                      } else {
-                        setActiveTab(item.id);
-                      }
+                      setActiveTab(item.id);
                       if (onClose) onClose();
                     }}
                     className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs font-medium transition-all group ${

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FileText, 
   Plus, 
@@ -40,8 +40,8 @@ interface PenatausahaanProps {
   setPersonelList: (list: Personel[]) => void;
   keuanganList: Keuangan[];
   setKeuanganList: (list: Keuangan[]) => void;
-  activeTabOverride?: 'umum' | 'personalia' | 'aset' | 'keuangan';
-  onSubTabChange?: (tab: 'umum' | 'personalia' | 'aset' | 'keuangan') => void;
+  activeTabOverride?: 'overview' | 'umum' | 'personalia' | 'aset' | 'keuangan';
+  onSubTabChange?: (tab: 'overview' | 'umum' | 'personalia' | 'aset' | 'keuangan') => void;
 }
 
 export default function Penatausahaan({ 
@@ -54,12 +54,12 @@ export default function Penatausahaan({
   setPersonelList,
   keuanganList,
   setKeuanganList,
-  activeTabOverride = 'umum',
+  activeTabOverride = 'overview',
   onSubTabChange
 }: PenatausahaanProps) {
 
   const activeSubTab = activeTabOverride;
-  const setActiveSubTab = (tab: 'umum' | 'personalia' | 'aset' | 'keuangan') => {
+  const setActiveSubTab = (tab: 'overview' | 'umum' | 'personalia' | 'aset' | 'keuangan') => {
     if (onSubTabChange) {
       onSubTabChange(tab);
     }
@@ -524,6 +524,51 @@ export default function Penatausahaan({
     return matchesSearch && matchesStatus;
   });
 
+  // Group employee grade (golongan) data sorted by standard rank
+  const golonganCounts = useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    personelList.forEach(p => {
+      const g = p.golongan || 'Non-Eselon';
+      counts[g] = (counts[g] || 0) + 1;
+    });
+
+    const getGolonganRank = (gName: string): number => {
+      const norm = gName.toLowerCase();
+      if (norm.includes('iv-e') || norm.includes('iv/e')) return 18;
+      if (norm.includes('iv-d') || norm.includes('iv/d')) return 17;
+      if (norm.includes('iv-c') || norm.includes('iv/c')) return 16;
+      if (norm.includes('iv-b') || norm.includes('iv/b')) return 15;
+      if (norm.includes('iv-a') || norm.includes('iv/a')) return 14;
+      if (norm.includes('iii-d') || norm.includes('iii/d')) return 13;
+      if (norm.includes('iii-c') || norm.includes('iii/c')) return 12;
+      if (norm.includes('iii-b') || norm.includes('iii/b')) return 11;
+      if (norm.includes('iii-a') || norm.includes('iii/a')) return 10;
+      if (norm.includes('ii-d') || norm.includes('ii/d')) return 9;
+      if (norm.includes('ii-c') || norm.includes('ii/c')) return 8;
+      if (norm.includes('ii-b') || norm.includes('ii/b')) return 7;
+      if (norm.includes('ii-a') || norm.includes('ii/a')) return 6;
+      if (norm.includes('i-d') || norm.includes('i/d')) return 5;
+      if (norm.includes('i-c') || norm.includes('i/c')) return 4;
+      if (norm.includes('i-b') || norm.includes('i/b')) return 3;
+      if (norm.includes('i-a') || norm.includes('i/a')) return 2;
+      if (norm.includes('non-eselon') || norm.includes('non-asn') || norm.includes('tanpa')) return 1;
+      return 0;
+    };
+
+    return Object.entries(counts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        rank: getGolonganRank(name)
+      }))
+      .sort((a, b) => b.rank - a.rank);
+  }, [personelList]);
+
+  const maxGolonganCount = useMemo(() => {
+    if (golonganCounts.length === 0) return 1;
+    return Math.max(...golonganCounts.map(item => item.count));
+  }, [golonganCounts]);
+
   const filteredKeuangan = keuanganList.filter(k => {
     const matchesSearch = k.uraian.toLowerCase().includes(keuanganSearch.toLowerCase()) ||
                           k.nomorBukti.toLowerCase().includes(keuanganSearch.toLowerCase()) ||
@@ -564,63 +609,231 @@ export default function Penatausahaan({
             Pengelolaan administrasi umum, kepegawaian personalia, inventarisasi aset, dan pembukuan keuangan UPTD PSA.
           </p>
         </div>
-
-        {/* Tab switcher buttons - Synced with Sidebar */}
-        <div className="flex bg-slate-100 p-1 rounded-xl scrollbar-none overflow-x-auto max-w-full">
-          <button
-            type="button"
-            id="subtab-umum"
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'umum' 
-                ? 'bg-white text-slate-850 shadow-xs' 
-                : 'text-slate-500 hover:text-slate-850'
-            }`}
-            onClick={() => setActiveSubTab('umum')}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Adm Umum</span>
-          </button>
-          <button
-            type="button"
-            id="subtab-personalia"
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'personalia' 
-                ? 'bg-white text-slate-850 shadow-xs' 
-                : 'text-slate-500 hover:text-slate-850'
-            }`}
-            onClick={() => setActiveSubTab('personalia')}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Personalia</span>
-          </button>
-          <button
-            type="button"
-            id="subtab-aset"
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'aset' 
-                ? 'bg-white text-slate-850 shadow-xs' 
-                : 'text-slate-500 hover:text-slate-850'
-            }`}
-            onClick={() => setActiveSubTab('aset')}
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>Aset & Inventaris</span>
-          </button>
-          <button
-            type="button"
-            id="subtab-keuangan"
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'keuangan' 
-                ? 'bg-white text-slate-850 shadow-xs' 
-                : 'text-slate-500 hover:text-slate-850'
-            }`}
-            onClick={() => setActiveSubTab('keuangan')}
-          >
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>Keuangan</span>
-          </button>
-        </div>
       </div>
+
+      {/* ----------------- 0. MAIN DASHBOARD OVERVIEW ----------------- */}
+      {activeSubTab === 'overview' && (
+        <div className="space-y-6">
+          {/* Summary Indicator Banner */}
+          <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl border border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Dashboard Penatausahaan</p>
+              <h2 className="text-lg font-black tracking-tight mt-0.5">Ringkasan Tata Kelola & Administrasi</h2>
+              <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                Rekapitulasi data kepegawaian, surat dinas masuk/keluar, logistika aset operasional, serta realisasi pembukuan anggaran internal.
+              </p>
+            </div>
+            <div className="bg-blue-950/80 px-4 py-2.5 rounded-xl border border-blue-800/45 text-right font-mono self-stretch sm:self-center flex flex-col justify-center">
+              <span className="text-[9px] text-blue-300 uppercase font-black tracking-widest block">Update Terakhir</span>
+              <span className="text-xs font-bold text-white mt-0.5">Hari Ini, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            </div>
+          </div>
+
+          {/* Quick Metrics Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
+              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                <Users className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pegawai</p>
+                <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{personelList.length} Personel</h3>
+                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                  {personelList.filter(p => p.statusKepegawaian === 'PNS').length} PNS &bull; {personelList.filter(p => p.statusKepegawaian === 'PPPK').length} PPPK
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                <Mail className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Arsip Surat</p>
+                <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{suratList.length} Berkas</h3>
+                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                  {suratList.filter(s => s.tipe === 'Masuk').length} Masuk &bull; {suratList.filter(s => s.tipe === 'Keluar').length} Keluar
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
+              <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl">
+                <Database className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Inventaris Aset</p>
+                <h3 className="text-base font-extrabold text-slate-800 mt-0.5">
+                  {inventarisList.reduce((sum, item) => sum + item.jumlah, 0)} Unit
+                </h3>
+                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                  {inventarisList.filter(item => item.kondisi === 'Baik').length} Kondisi Baik
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
+              <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+                <DollarSign className="w-5.5 h-5.5" />
+              </div>
+              <div>
+                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Kas Internal</p>
+                <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{formatRupiah(saldoKas)}</h3>
+                <p className="text-[9.5px] text-slate-400 mt-0.5 font-mono">
+                  Sisa Saldo Anggaran
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Golongan Pegawai berdasarkan tingkatan kedinasan */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-800">Statistik Penyebaran Golongan Pegawai</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Analisis komposisi kepangkatan staf internal UPTD berdasarkan urutan kedinasan resmi</p>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg text-[10px] font-bold text-slate-500 font-mono">
+                  <Award className="w-3.5 h-3.5 text-blue-500" />
+                  <span>{golonganCounts.length} Kategori</span>
+                </div>
+              </div>
+
+              {golonganCounts.length > 0 ? (
+                <div className="space-y-3.5">
+                  {golonganCounts.map((item) => {
+                    const percentage = Math.round((item.count / personelList.length) * 100);
+                    // Determine colors based on rank tier
+                    let barColor = 'bg-blue-500';
+                    let bgLight = 'bg-blue-50';
+                    let badgeColor = 'text-blue-700 bg-blue-50 border-blue-100';
+                    if (item.rank >= 14) {
+                      barColor = 'bg-indigo-600';
+                      bgLight = 'bg-indigo-50/70';
+                      badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
+                    } else if (item.rank >= 10) {
+                      barColor = 'bg-emerald-600';
+                      bgLight = 'bg-emerald-50/70';
+                      badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                    } else if (item.rank >= 6) {
+                      barColor = 'bg-purple-600';
+                      bgLight = 'bg-purple-50/70';
+                      badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
+                    } else if (item.rank >= 2) {
+                      barColor = 'bg-amber-600';
+                      bgLight = 'bg-amber-50/70';
+                      badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
+                    } else {
+                      barColor = 'bg-slate-500';
+                      bgLight = 'bg-slate-50';
+                      badgeColor = 'text-slate-600 bg-slate-50 border-slate-150';
+                    }
+
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-slate-700 shrink-0 min-w-[140px] truncate">{item.name}</span>
+                            <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded border ${badgeColor}`}>
+                              Tier {item.rank >= 14 ? 'IV' : item.rank >= 10 ? 'III' : item.rank >= 6 ? 'II' : item.rank >= 2 ? 'I' : 'Non-ASN'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="font-extrabold text-slate-800">{item.count} Orang</span>
+                            <span className="text-slate-400 text-[10px]">({percentage}%)</span>
+                          </div>
+                        </div>
+                        <div className="h-4 w-full bg-slate-50 rounded-lg overflow-hidden flex items-center border border-slate-100/50">
+                          <div 
+                            className={`h-full ${barColor} rounded-r-sm transition-all duration-500`}
+                            style={{ width: `${(item.count / maxGolonganCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-400">
+                  <p>Tidak ada data kepangkatan pegawai saat ini.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Insights panel */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-2.5">
+                  <h3 className="font-extrabold text-sm text-slate-800">Analisis Jabatan & Kepangkatan</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Struktur Mayoritas</span>
+                    <p className="text-xs text-slate-700 font-bold leading-normal">
+                      {golonganCounts.length > 0 ? (
+                        <>
+                          Penyebaran kepangkatan tertinggi saat ini didominasi oleh golongan{' '}
+                          <span className="text-blue-600 font-extrabold">
+                            {golonganCounts.reduce((prev, current) => (prev.count > current.count) ? prev : current).name}
+                          </span>{' '}
+                          dengan total{' '}
+                          <span className="font-extrabold text-slate-800">
+                            {golonganCounts.reduce((prev, current) => (prev.count > current.count) ? prev : current).count} pegawai
+                          </span>.
+                        </>
+                      ) : (
+                        'Belum ada data pegawai terdaftar.'
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Komparasi Jenjang Jabatan</span>
+                    <div className="space-y-1.5 text-xs text-slate-600">
+                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
+                        <span className="text-[10px]">Pangkat Eselon (Tier III & IV)</span>
+                        <span className="font-extrabold text-slate-800">
+                          {personelList.filter(p => {
+                            const norm = p.golongan?.toLowerCase() || '';
+                            return norm.includes('iii') || norm.includes('iv');
+                          }).length} Orang
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
+                        <span className="text-[10px]">Staf Pelaksana (Tier I & II)</span>
+                        <span className="font-extrabold text-slate-800">
+                          {personelList.filter(p => {
+                            const norm = p.golongan?.toLowerCase() || '';
+                            return norm.includes('i-') || norm.includes('ii-') || norm.includes('i/') || norm.includes('ii/');
+                          }).length} Orang
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
+                        <span className="text-[10px]">Non-ASN / Honorer / Lainnya</span>
+                        <span className="font-extrabold text-slate-800">
+                          {personelList.filter(p => {
+                            const norm = p.golongan?.toLowerCase() || 'non-eselon';
+                            return norm.includes('non-eselon') || norm.includes('non-asn') || norm.includes('tanpa');
+                          }).length} Orang
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-50 text-[10px] text-slate-400 leading-relaxed flex items-center gap-2">
+                <div className="p-1 bg-yellow-50 text-yellow-600 rounded">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <span>Setiap data kepegawaian disinkronisasikan secara langsung dengan arsip utama kepegawaian SumutProv.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ----------------- 1. VIEW ADM UMUM (SURAT) ----------------- */}
       {activeSubTab === 'umum' && (
@@ -1048,6 +1261,7 @@ export default function Penatausahaan({
             </div>
           </div>
 
+          {/* Data table controls & list */}
           <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1">
