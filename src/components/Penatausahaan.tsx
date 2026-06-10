@@ -65,9 +65,6 @@ export default function Penatausahaan({
     }
   };
 
-  // State for Chart categories on main dashboard Overview
-  const [activeChartCategory, setActiveChartCategory] = useState<'golongan' | 'gender' | 'agama' | 'pendidikan'>('golongan');
-
   // Search & Filters state
   const [suratSearch, setSuratSearch] = useState('');
   const [suratSubTab, setSuratSubTab] = useState<'masuk' | 'keluar' | 'semua'>('masuk');
@@ -858,24 +855,7 @@ export default function Penatausahaan({
       .sort((a, b) => b.rank - a.rank);
   }, [personelList]);
 
-  const currentChartData = useMemo(() => {
-    switch (activeChartCategory) {
-      case 'gender':
-        return genderCounts;
-      case 'agama':
-        return agamaCounts;
-      case 'pendidikan':
-        return pendidikanCounts;
-      case 'golongan':
-      default:
-        return golonganCounts;
-    }
-  }, [activeChartCategory, golonganCounts, genderCounts, agamaCounts, pendidikanCounts]);
 
-  const maxChartCount = useMemo(() => {
-    if (currentChartData.length === 0) return 1;
-    return Math.max(...currentChartData.map(item => item.count));
-  }, [currentChartData]);
 
   const filteredKeuangan = keuanganList.filter(k => {
     const matchesSearch = k.uraian.toLowerCase().includes(keuanganSearch.toLowerCase()) ||
@@ -994,238 +974,308 @@ export default function Penatausahaan({
             </div>
           </div>
 
-          {/* Chart Pegawai Berdasarkan Golongan, Jenis Kelamin, Agama, dan Pendidikan */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-50 pb-4">
-                <div>
-                  <h3 className="font-extrabold text-sm text-slate-800">
-                    {activeChartCategory === 'golongan' && 'Statistik Penyebaran Golongan Pegawai'}
-                    {activeChartCategory === 'gender' && 'Statistik Jenis Kelamin Pegawai'}
-                    {activeChartCategory === 'agama' && 'Statistik Distribusi Agama Pegawai'}
-                    {activeChartCategory === 'pendidikan' && 'Statistik Tingkat Pendidikan Tertinggi'}
-                  </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {activeChartCategory === 'golongan' && 'Analisis komposisi kepangkatan staf internal UPTD berdasarkan urutan kedinasan resmi'}
-                    {activeChartCategory === 'gender' && 'Rasio perbandingan jumlah staf laki-laki dan perempuan di lingkungan kerja'}
-                    {activeChartCategory === 'agama' && 'Distribusi latar belakang kepercayaan/keagamaan personel aktif UPTD'}
-                    {activeChartCategory === 'pendidikan' && 'Tingkat kualifikasi akademik tertinggi yang dimiliki oleh personel aktif'}
-                  </p>
+          {/* 4 Kolom Grafik / Chart Pegawai */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 w-full">
+            {/* 1. Golongan / Pangkat Chart */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800">Pangkat & Golongan</h3>
+                    <p className="text-[10px] text-slate-400">Distribusi kepangkatan pegawai</p>
+                  </div>
                 </div>
-                <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200 shrink-0 self-start sm:self-center overflow-x-auto max-w-full">
-                  <button
-                    type="button"
-                    onClick={() => setActiveChartCategory('golongan')}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
-                      activeChartCategory === 'golongan'
-                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Golongan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveChartCategory('gender')}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
-                      activeChartCategory === 'gender'
-                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Gender
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveChartCategory('agama')}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
-                      activeChartCategory === 'agama'
-                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Agama
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveChartCategory('pendidikan')}
-                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider shrink-0 ${
-                      activeChartCategory === 'pendidikan'
-                        ? 'bg-white text-blue-600 shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Pendidikan
-                  </button>
-                </div>
+
+                {golonganCounts.length > 0 ? (
+                  <div className="h-44 flex items-end justify-between gap-1.5 pt-6 pb-2 border-b border-dashed border-slate-100">
+                    {golonganCounts.slice(0, 7).map((item) => {
+                      const percentage = Math.round((item.count / personelList.length) * 100);
+                      const heightPercent = `${(item.count / maxGolonganCount) * 100}%`;
+                      let barColor = 'bg-blue-500 hover:bg-blue-600';
+                      if (item.rank >= 14) barColor = 'bg-indigo-500 hover:bg-indigo-600';
+                      else if (item.rank >= 10) barColor = 'bg-emerald-500 hover:bg-emerald-600';
+                      else if (item.rank >= 6) barColor = 'bg-purple-500 hover:bg-purple-600';
+                      else if (item.rank >= 2) barColor = 'bg-amber-500 hover:bg-amber-600';
+                      else barColor = 'bg-slate-400 hover:bg-slate-500';
+
+                      return (
+                        <div key={item.name} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full mb-1.5 bg-slate-800 text-white text-[9px] px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-center whitespace-nowrap shadow-md">
+                            <span className="font-extrabold block">{item.name}</span>
+                            <span>{item.count} Org ({percentage}%)</span>
+                          </div>
+                          {/* Column Bar Area */}
+                          <div className="w-full max-w-[24px] sm:max-w-[28px] bg-slate-50/50 hover:bg-slate-50 rounded-t-lg transition-colors flex items-end h-[115px] p-0.5">
+                            <div 
+                              className={`w-full ${barColor} rounded-t-md transition-all duration-500 cursor-pointer relative flex justify-center`}
+                              style={{ height: heightPercent || '4%' }}
+                            >
+                              <span className="absolute -top-5 text-center text-[10px] font-extrabold text-slate-700">
+                                {item.count}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Label below */}
+                          <span className="text-[9px] font-black text-slate-500 mt-1 truncate max-w-full text-center" title={item.name}>
+                            {item.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    Belum ada data golongan.
+                  </div>
+                )}
               </div>
+              <div className="mt-4 pt-3 border-t border-slate-50 text-[9.5px] text-slate-400">
+                Total Kategori: <span className="font-extrabold text-slate-600">{golonganCounts.length} Kategori</span>
+              </div>
+            </div>
 
-              {currentChartData.length > 0 ? (
-                <div className="space-y-3.5">
-                  {currentChartData.map((item) => {
-                    const percentage = Math.round((item.count / personelList.length) * 100);
-                    // Determine colors based on category/rank
-                    let barColor = 'bg-blue-500';
-                    let badgeText = '';
-                    let badgeColor = 'text-blue-700 bg-blue-50 border-blue-100';
+            {/* 2. Jenis Kelamin Chart */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
+                  <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800">Jenis Kelamin</h3>
+                    <p className="text-[10px] text-slate-400">Rasio gender - donut chart</p>
+                  </div>
+                </div>
 
-                    if (activeChartCategory === 'golongan') {
-                      badgeText = `Tier ${item.rank >= 14 ? 'IV' : item.rank >= 10 ? 'III' : item.rank >= 6 ? 'II' : item.rank >= 2 ? 'I' : 'Non-ASN'}`;
-                      if (item.rank >= 14) {
-                        barColor = 'bg-indigo-600';
-                        badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
-                      } else if (item.rank >= 10) {
-                        barColor = 'bg-emerald-600';
-                        badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
-                      } else if (item.rank >= 6) {
-                        barColor = 'bg-purple-600';
-                        badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
-                      } else if (item.rank >= 2) {
-                        barColor = 'bg-amber-600';
-                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
-                      } else {
-                        barColor = 'bg-slate-500';
-                        badgeColor = 'text-slate-600 bg-slate-50 border-slate-150';
-                      }
-                    } else if (activeChartCategory === 'gender') {
-                      if (item.name === 'Laki-laki') {
-                        barColor = 'bg-sky-500';
-                        badgeText = 'Pria';
-                        badgeColor = 'text-sky-700 bg-sky-50 border-sky-100';
-                      } else {
-                        barColor = 'bg-rose-500';
-                        badgeText = 'Wanita';
-                        badgeColor = 'text-rose-700 bg-rose-50 border-rose-100';
-                      }
-                    } else if (activeChartCategory === 'agama') {
-                      badgeText = 'Kepercayaan';
-                      if (item.name === 'Islam') {
-                        barColor = 'bg-emerald-600';
-                        badgeColor = 'text-emerald-700 bg-emerald-50 border-emerald-100';
-                      } else if (item.name.includes('Kristen') || item.name.includes('Protestan')) {
-                        barColor = 'bg-indigo-500';
-                        badgeColor = 'text-indigo-700 bg-indigo-50 border-indigo-100';
-                      } else if (item.name === 'Katolik') {
-                        barColor = 'bg-blue-600';
-                        badgeColor = 'text-blue-700 bg-blue-50 border-blue-100';
-                      } else if (item.name === 'Hindu' || item.name === 'Buddha') {
-                        barColor = 'bg-amber-500';
-                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
-                      } else {
-                        barColor = 'bg-slate-500';
-                        badgeColor = 'text-slate-600 bg-slate-50 border-slate-200';
-                      }
-                    } else if (activeChartCategory === 'pendidikan') {
-                      badgeText = item.name !== 'Tidak Terdata' ? 'Pendidikan' : 'Keterangan';
-                      if (item.rank >= 7) {
-                        barColor = 'bg-purple-600';
-                        badgeColor = 'text-purple-700 bg-purple-50 border-purple-100';
-                      } else if (item.rank >= 4) {
-                        barColor = 'bg-cyan-600';
-                        badgeColor = 'text-cyan-700 bg-cyan-50 border-cyan-100';
-                      } else {
-                        barColor = 'bg-amber-600';
-                        badgeColor = 'text-amber-700 bg-amber-50 border-amber-100';
-                      }
-                    }
+                {genderCounts.length > 0 ? (
+                  (() => {
+                    const totalGender = genderCounts.reduce((sum, g) => sum + g.count, 0) || 1;
+                    const maleCount = genderCounts.find(g => g.name === 'Laki-laki')?.count || 0;
+                    const femaleCount = genderCounts.find(g => g.name === 'Perempuan')?.count || 0;
+                    const malePercent = Math.round((maleCount / totalGender) * 100);
+                    const femalePercent = Math.round((femaleCount / totalGender) * 100);
+                    const r = 32;
+                    const circumference = 2 * Math.PI * r;
+                    const maleStroke = (circumference * maleCount) / totalGender;
+                    const femaleStroke = (circumference * femaleCount) / totalGender;
 
                     return (
-                      <div key={item.name} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-700 shrink-0 min-w-[140px] truncate">{item.name}</span>
-                            <span className={`px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded border ${badgeColor}`}>
-                              {badgeText || item.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 font-mono font-bold">
-                            <span className="text-slate-800">{item.count} Orang</span>
-                            <span className="text-slate-400 text-[10px]">({percentage}%)</span>
+                      <div className="h-44 flex items-center justify-between gap-4 pt-4 pb-2 border-b border-dashed border-slate-100">
+                        {/* Donut circle representation */}
+                        <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
+                          <svg className="w-full h-full transform -rotate-90 origin-center" viewBox="0 0 100 100">
+                            {/* Track */}
+                            <circle 
+                              cx="50" 
+                              cy="50" 
+                              r={r} 
+                              fill="transparent" 
+                              stroke="#f1f5f9" 
+                              strokeWidth="8" 
+                            />
+                            {/* Male Arc */}
+                            {maleCount > 0 && (
+                              <circle 
+                                cx="50" 
+                                cy="50" 
+                                r={r} 
+                                fill="transparent" 
+                                stroke="#0ea5e9" 
+                                strokeWidth="10" 
+                                strokeDasharray={`${maleStroke} ${circumference}`} 
+                                strokeDashoffset={0} 
+                                strokeLinecap={femaleCount > 0 ? 'butt' : 'round'}
+                                className="transition-all duration-700 ease-out"
+                              />
+                            )}
+                            {/* Female Arc */}
+                            {femaleCount > 0 && (
+                              <circle 
+                                cx="50" 
+                                cy="50" 
+                                r={r} 
+                                fill="transparent" 
+                                stroke="#f43f5e" 
+                                strokeWidth="10" 
+                                strokeDasharray={`${femaleStroke} ${circumference}`} 
+                                strokeDashoffset={-maleStroke} 
+                                strokeLinecap={maleCount > 0 ? 'butt' : 'round'}
+                                className="transition-all duration-700 ease-out"
+                              />
+                            )}
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-sm font-black text-slate-800 leading-none">{totalGender}</span>
+                            <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Pegawai</span>
                           </div>
                         </div>
-                        <div className="h-4 w-full bg-slate-50 rounded-lg overflow-hidden flex items-center border border-slate-100/50">
-                          <div 
-                            className={`h-full ${barColor} rounded-r-sm transition-all duration-500`}
-                            style={{ width: `${(item.count / maxChartCount) * 100}%` }}
-                          />
+
+                        {/* Legends with detail */}
+                        <div className="flex-1 flex flex-col justify-center gap-3">
+                          <div className="bg-sky-50/50 rounded-lg p-2 border border-sky-100/40 flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="text-[9px] font-extrabold text-slate-500 block uppercase tracking-wider">Pria</span>
+                              <span className="text-xs font-black text-slate-800 font-mono">{maleCount} Org ({malePercent}%)</span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-rose-50/50 rounded-lg p-2 border border-rose-100/40 flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="text-[9px] font-extrabold text-slate-500 block uppercase tracking-wider">Wanita</span>
+                              <span className="text-xs font-black text-slate-800 font-mono">{femaleCount} Org ({femalePercent}%)</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-slate-400">
-                  <p>Tidak ada data pegawai saat ini.</p>
-                </div>
-              )}
+                  })()
+                ) : (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    Belum ada data gender.
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-50 text-[9.5px] text-slate-400">
+                Pria: <span className="font-extrabold text-sky-600">{personelList.filter(p => p.jenisKelamin === 'Laki-laki').length}</span> &bull; 
+                Wanita: <span className="font-extrabold text-rose-600">{personelList.filter(p => p.jenisKelamin === 'Perempuan').length}</span>
+              </div>
             </div>
 
-            {/* Quick Insights panel */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between">
+            {/* 3. Latar Belakang Agama Chart */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
               <div>
-                <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-2.5">
-                  <h3 className="font-extrabold text-sm text-slate-800">
-                    {activeChartCategory === 'golongan' && 'Analisis Jabatan & Kepangkatan'}
-                    {activeChartCategory === 'gender' && 'Analisis Demografi Gender'}
-                    {activeChartCategory === 'agama' && 'Analisis Keragaman Keagamaan'}
-                    {activeChartCategory === 'pendidikan' && 'Analisis Kualifikasi Akademik'}
-                  </h3>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Mayoritas Data</span>
-                    <p className="text-xs text-slate-700 font-bold leading-normal">
-                      {currentChartData.length > 0 ? (
-                        <>
-                          Kelompok dominan saat ini adalah{' '}
-                          <span className="text-blue-600 font-extrabold">
-                            {currentChartData.reduce((prev, current) => (prev.count > current.count) ? prev : current).name}
-                          </span>{' '}
-                          dengan total{' '}
-                          <span className="font-extrabold text-slate-800">
-                            {currentChartData.reduce((prev, current) => (prev.count > current.count) ? prev : current).count} pegawai
-                          </span>.
-                        </>
-                      ) : (
-                        'Belum ada data pegawai terdaftar.'
-                      )}
-                    </p>
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <UserIcon className="w-5 h-5" />
                   </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800">Agama / Kepercayaan</h3>
+                    <p className="text-[10px] text-slate-400">Ragam keyakinan staf - pie chart</p>
+                  </div>
+                </div>
 
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block">Breakdown Keseluruhan</span>
-                    <div className="space-y-1.5 text-xs text-slate-600">
-                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Rasio Laki-laki & Perempuan</span>
-                        <span className="font-extrabold text-slate-800 font-mono">
-                          {personelList.filter(p => p.jenisKelamin === 'Laki-laki').length}L : {personelList.filter(p => p.jenisKelamin === 'Perempuan').length}P
-                        </span>
+                {agamaCounts.length > 0 ? (
+                  (() => {
+                    const totalAgama = personelList.length || 1;
+                    const colors: { [key: string]: string } = {
+                      'Islam': '#10b981', 
+                      'Kristen Protestan': '#6366f1', 
+                      'Katolik': '#3b82f6', 
+                      'Hindu': '#f59e0b', 
+                      'Buddha': '#ec4899', 
+                      'Kristen': '#818cf8', 
+                      'Konghucu': '#ef4444', 
+                      'Tidak Terdata': '#94a3b8'
+                    };
+                    const defaultColors = ['#10b981', '#6366f1', '#3b82f6', '#f59e0b', '#ec4899', '#94a3b8'];
+                    
+                    let accumulated = 0;
+                    const parts = agamaCounts.map((item, idx) => {
+                      const percentage = (item.count / totalAgama) * 100;
+                      const start = accumulated;
+                      accumulated += percentage;
+                      const color = colors[item.name] || defaultColors[idx % defaultColors.length];
+                      return `${color} ${start}% ${accumulated}%`;
+                    });
+                    const conicGradientString = parts.length > 0 ? `conic-gradient(${parts.join(', ')})` : 'conic-gradient(#cbd5e1 0% 100%)';
+
+                    return (
+                      <div className="h-44 flex items-center justify-between gap-4 pt-4 pb-2 border-b border-dashed border-slate-100">
+                        {/* Conic Gradient Pie circle */}
+                        <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-md shrink-0 transition-transform hover:scale-105"
+                             style={{ background: conicGradientString }}>
+                          {/* Mini cutout to look extra clean */}
+                          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-xs border border-slate-100/50">
+                            <span className="text-[8px] font-black text-slate-400">Pie</span>
+                          </div>
+                        </div>
+
+                        {/* Legends with detail (limit top 4) */}
+                        <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
+                          {agamaCounts.slice(0, 4).map((item, idx) => {
+                            const percentVal = Math.round((item.count / totalAgama) * 100);
+                            const markerColor = colors[item.name] || defaultColors[idx % defaultColors.length];
+                            return (
+                              <div key={item.name} className="flex items-center gap-1.5 text-[10px] min-w-0">
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: markerColor }} />
+                                <div className="flex justify-between w-full min-w-0">
+                                  <span className="text-slate-600 font-extrabold truncate mr-1 block leading-tight">{item.name}</span>
+                                  <span className="text-slate-500 font-bold font-mono shrink-0">{item.count} ({percentVal}%)</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Pendidikan S1 & Di Atasnya</span>
-                        <span className="font-extrabold text-slate-800 font-mono">
-                          {personelList.filter(p => {
-                            return p.riwayatPendidikan?.some(edu => ['S1', 'S2', 'S3'].includes(edu.tingkat));
-                          }).length} Orang
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center bg-white p-1 rounded border border-slate-100">
-                        <span className="text-[10px]">Personel PNS Aktif</span>
-                        <span className="font-extrabold text-slate-800 font-mono">
-                          {personelList.filter(p => p.statusKepegawaian === 'PNS').length} Orang
-                        </span>
-                      </div>
-                    </div>
+                    );
+                  })()
+                ) : (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    Belum ada data agama.
                   </div>
-                </div>
+                )}
               </div>
+              <div className="mt-4 pt-3 border-t border-slate-50 text-[9.5px] text-slate-400">
+                Mayoritas: <span className="font-extrabold text-slate-600">{agamaCounts[0]?.name || '-'}</span>
+              </div>
+            </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-50 text-[10px] text-slate-400 leading-relaxed flex items-center gap-2">
-                <div className="p-1 bg-yellow-50 text-yellow-600 rounded">
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+            {/* 4. Kualifikasi Pendidikan Chart */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
+                  <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800">Tingkat Pendidikan</h3>
+                    <p className="text-[10px] text-slate-400">Kualifikasi akademik tertinggi</p>
+                  </div>
                 </div>
-                <span>Setiap data kepegawaian disinkronisasikan secara langsung dengan arsip utama kepegawaian SumutProv.</span>
+
+                {pendidikanCounts.length > 0 ? (
+                  <div className="h-44 flex flex-col justify-center gap-3 pt-3 pb-2 border-b border-dashed border-slate-100">
+                    {pendidikanCounts.slice(0, 4).map((item) => {
+                      const percentage = Math.round((item.count / personelList.length) * 100);
+                      const maxPendidikanLocal = Math.max(...pendidikanCounts.map(g => g.count), 1);
+                      const widthPercent = `${(item.count / maxPendidikanLocal) * 100}%`;
+                      let barColor = 'bg-purple-500 hover:bg-purple-600';
+                      if (item.rank >= 7) barColor = 'bg-purple-500 hover:bg-purple-600';
+                      else if (item.rank >= 4) barColor = 'bg-cyan-500 hover:bg-cyan-600';
+                      else barColor = 'bg-amber-500 hover:bg-amber-600';
+
+                      return (
+                        <div key={item.name} className="space-y-1 group">
+                          <div className="flex items-center justify-between text-[11px] font-bold">
+                            <span className="text-slate-700 font-extrabold">{item.name}</span>
+                            <span className="text-slate-500 font-bold font-mono">{item.count} Org ({percentage}%)</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-50 rounded-lg overflow-hidden border border-slate-100/50">
+                            <div 
+                              className={`h-full ${barColor} rounded-r-lg transition-all duration-500`}
+                              style={{ width: widthPercent }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    Belum ada data pendidikan.
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-50 text-[9.5px] text-slate-400">
+                Pendidikan S1+: <span className="font-extrabold text-slate-600">{
+                  personelList.filter(p => p.riwayatPendidikan?.some(edu => ['S1', 'S2', 'S3'].includes(edu.tingkat))).length
+                } orang</span>
               </div>
             </div>
           </div>
