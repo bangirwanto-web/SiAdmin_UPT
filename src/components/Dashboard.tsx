@@ -13,7 +13,7 @@ import {
   Droplet,
   Waves
 } from 'lucide-react';
-import { User, ProfileSettings, Surat, KegiatanOperasional, DebitAir, ProyekPembangunan } from '../types';
+import { User, ProfileSettings, Surat, KegiatanOperasional, DebitAir, ProyekPembangunan, Personel } from '../types';
 
 interface DashboardProps {
   currentUser: User;
@@ -23,6 +23,7 @@ interface DashboardProps {
   operasionalList: KegiatanOperasional[];
   debitList: DebitAir[];
   pembangunanList: ProyekPembangunan[];
+  personelList: Personel[];
 }
 
 export default function Dashboard({ 
@@ -32,7 +33,8 @@ export default function Dashboard({
   suratList, 
   operasionalList, 
   debitList, 
-  pembangunanList 
+  pembangunanList,
+  personelList
 }: DashboardProps) {
 
   // Dynamic calculations
@@ -142,41 +144,27 @@ export default function Dashboard({
           </div>
         </motion.div>
 
-        {/* Discharge Level Warn Alert */}
+        {/* Kepegawaian stats */}
         <motion.div 
           whileHover={{ y: -3 }}
-          className={`p-5 rounded-2xl border shadow-xs flex items-start gap-4 ${
-            highestAlert.status === 'Awas' || highestAlert.status === 'Siaga'
-              ? 'bg-rose-50 border-rose-100 text-rose-800' 
-              : highestAlert.status === 'Waspada'
-              ? 'bg-amber-50 border-amber-100 text-amber-800'
-              : 'bg-white border-slate-100 text-slate-800'
-          }`}
+          className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex items-start gap-4"
         >
-          <div className={`p-3 rounded-xl ${
-            highestAlert.status === 'Awas' || highestAlert.status === 'Siaga'
-              ? 'bg-rose-100 text-rose-600'
-              : highestAlert.status === 'Waspada'
-              ? 'bg-amber-100 text-amber-600'
-              : 'bg-sky-50 text-sky-600'
-          }`}>
-            <AlertTriangle className="w-5 h-5" />
+          <div className="p-3 bg-teal-50 text-teal-600 rounded-xl">
+            <Users className="w-5 h-5" />
           </div>
-          <div className="min-w-0">
-            <p className={`text-[11px] font-bold uppercase tracking-widest ${
-              highestAlert.status === 'Awas' || highestAlert.status === 'Siaga'
-                ? 'text-rose-500' 
-                : highestAlert.status === 'Waspada'
-                ? 'text-amber-500'
-                : 'text-slate-400'
-            }`}>
-              Muka Sungai Bolon
-            </p>
-            <p className="text-lg font-black mt-1 uppercase tracking-tight truncate">
-              {highestAlert.status} ({highestAlert.tinggiMukaAir} cm)
-            </p>
-            <p className="text-[11px] opacity-80 mt-1 truncate">
-              Pos: {highestAlert.lokasiPos}
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Kepegawaian</p>
+            <p className="text-2xl font-black text-slate-800 mt-1">{personelList.length} Pegawai</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              <span className="text-emerald-600 font-bold">
+                {personelList.filter(p => p.statusKepegawaian === 'PNS').length}
+              </span> PNS &bull;{' '}
+              <span className="text-indigo-600 font-bold">
+                {personelList.filter(p => p.statusKepegawaian === 'PPPK').length}
+              </span> PPPK &bull;{' '}
+              <span className="text-amber-600 font-bold">
+                {personelList.filter(p => p.statusKepegawaian !== 'PNS' && p.statusKepegawaian !== 'PPPK').length}
+              </span> Non-PNS
             </p>
           </div>
         </motion.div>

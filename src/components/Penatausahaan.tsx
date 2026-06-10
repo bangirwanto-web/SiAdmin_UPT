@@ -22,7 +22,11 @@ import {
   BookOpen,
   Download,
   FileSpreadsheet,
-  Edit
+  Edit,
+  Image,
+  Upload,
+  Check,
+  User as UserIcon
 } from 'lucide-react';
 import { User, Surat, InventarisAset, Personel, Keuangan } from '../types';
 
@@ -114,6 +118,7 @@ export default function Penatausahaan({
   const [newPersStatus, setNewPersStatus] = useState<'PNS' | 'PPPK' | 'Honor Daerah' | 'Kontrak'>('PNS');
   const [newPersTelepon, setNewPersTelepon] = useState('');
   const [newPersEmail, setNewPersEmail] = useState('');
+  const [newPersFoto, setNewPersFoto] = useState('');
 
   // New Keuangan Form State
   const [newKeuNoBukti, setNewKeuNoBukti] = useState('');
@@ -129,6 +134,17 @@ export default function Penatausahaan({
   const [editingAsetId, setEditingAsetId] = useState<string | null>(null);
   const [editingPersonelId, setEditingPersonelId] = useState<string | null>(null);
   const [editingKeuanganId, setEditingKeuanganId] = useState<string | null>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPersFoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const isEditable = currentUser.role === 'admin';
 
@@ -194,6 +210,7 @@ export default function Penatausahaan({
     setNewPersStatus(pers.statusKepegawaian);
     setNewPersTelepon(pers.telepon === '-' ? '' : pers.telepon);
     setNewPersEmail(pers.email === '-' ? '' : pers.email);
+    setNewPersFoto(pers.foto || '');
     setIsPersonelModalOpen(true);
   };
 
@@ -206,6 +223,7 @@ export default function Penatausahaan({
     setNewPersStatus('PNS');
     setNewPersTelepon('');
     setNewPersEmail('');
+    setNewPersFoto('');
     setIsPersonelModalOpen(true);
   };
 
@@ -343,7 +361,8 @@ export default function Penatausahaan({
       golongan: newPersGolongan || 'Non-Eselon',
       statusKepegawaian: newPersStatus,
       telepon: newPersTelepon || '-',
-      email: newPersEmail || '-'
+      email: newPersEmail || '-',
+      foto: newPersFoto || ''
     };
 
     if (editingPersonelId) {
@@ -362,6 +381,7 @@ export default function Penatausahaan({
     setNewPersStatus('PNS');
     setNewPersTelepon('');
     setNewPersEmail('');
+    setNewPersFoto('');
   };
 
   const handleDeletePersonel = (id: string) => {
@@ -1092,8 +1112,24 @@ export default function Penatausahaan({
                     filteredPersonel.map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50/40 transition">
                         <td className="p-3 pl-6">
-                          <p className="font-extrabold text-slate-800">{p.nama}</p>
-                          <p className="text-[9.5px] text-slate-400 font-mono mt-0.5">NIP: {p.nip}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                              {p.foto ? (
+                                <img
+                                  referrerPolicy="no-referrer"
+                                  src={p.foto}
+                                  alt={p.nama}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <UserIcon className="w-4 h-4 text-slate-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-slate-800">{p.nama}</p>
+                              <p className="text-[9.5px] text-slate-400 font-mono mt-0.5">NIP: {p.nip}</p>
+                            </div>
+                          </div>
                         </td>
                         <td className="p-3 font-semibold text-slate-700">{p.jabatan}</td>
                         <td className="p-3 text-slate-500 font-medium">{p.golongan}</td>
@@ -1697,39 +1733,56 @@ export default function Penatausahaan({
       {/* ADM PERSONALIA MODAL */}
       {isPersonelModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100">
             <div className="bg-slate-900 text-slate-100 p-4">
-              <h3 className="font-extrabold text-sm">Tambah Pegawai Internal</h3>
+              <h3 className="font-extrabold text-sm">
+                {editingPersonelId ? 'Ubah Rincian Pegawai' : 'Tambah Pegawai Internal'}
+              </h3>
               <p className="text-[10px] text-slate-400 mt-0.5">Daftarkan personel baru ke database Kepegawaian</p>
             </div>
 
             <form onSubmit={handleAddPersonel} className="p-5 space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">NIP Resmi (Jika Ada)</label>
-                  <input
-                    type="text"
-                    placeholder="Misal: 1982..."
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersNip}
-                    onChange={(e) => setNewPersNip(e.target.value)}
-                  />
+              {/* 1. Upload Foto Section */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 flex items-center gap-4">
+                <div className="relative w-14 h-14 rounded-full bg-slate-200 border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center">
+                  {newPersFoto ? (
+                    <img src={newPersFoto} alt="Preview Foto" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-6 h-6 text-slate-400" />
+                  )}
+                  {newPersFoto && (
+                    <button
+                      type="button"
+                      onClick={() => setNewPersFoto('')}
+                      className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-bold"
+                    >
+                      Hapus
+                    </button>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Kepegawaian</label>
-                  <select
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersStatus}
-                    onChange={(e: any) => setNewPersStatus(e.target.value)}
-                  >
-                    <option value="PNS">Aparatur PNS</option>
-                    <option value="PPPK">Pegawai PPPK</option>
-                    <option value="Honor Daerah">Honor Daerah</option>
-                    <option value="Kontrak">Tenaga Kontrak/Lainnya</option>
-                  </select>
+                <div className="space-y-1">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Foto Profil Pegawai</span>
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer bg-white hover:bg-slate-50 border border-slate-200 shadow-xs px-2.5 py-1 text-[11px] font-bold text-slate-700 rounded-lg transition flex items-center gap-1">
+                      <Image className="w-3 h-3 text-slate-500" />
+                      <span>Unggah Foto</span>
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                      />
+                    </label>
+                    {newPersFoto && (
+                      <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                        <Check className="w-3 h-3" /> Terpilih
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* 2. Nama Lengkap */}
               <div>
                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Lengkap & Gelar</label>
                 <input
@@ -1742,49 +1795,71 @@ export default function Penatausahaan({
                 />
               </div>
 
+              {/* 3. Status Kepegawaian & 4. NIP */}
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Kepegawaian</label>
+                  <select
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
+                    value={newPersStatus}
+                    onChange={(e: any) => setNewPersStatus(e.target.value)}
+                  >
+                    <option value="PNS">Aparatur PNS</option>
+                    <option value="PPPK">Pegawai PPPK</option>
+                    <option value="Honor Daerah">Honor Daerah</option>
+                    <option value="Kontrak">Tenaga Kontrak/Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">NIP Resmi</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 19820817..."
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newPersNip}
+                    onChange={(e) => setNewPersNip(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 5. Pangkat & Golongan & 6. Jabatan */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pangkat / Golongan</label>
+                  <select
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
+                    value={newPersGolongan}
+                    onChange={(e) => setNewPersGolongan(e.target.value)}
+                  >
+                    <option value="Non-Eselon">Non-ASN / Tanpa Golongan</option>
+                    <option value="Juru Muda / I-a">Golongan I/a - Juru Muda</option>
+                    <option value="Juru Muda Tk. I / I-b">Golongan I/b - Juru Muda Tk. I</option>
+                    <option value="Juru / I-c">Golongan I/c - Juru</option>
+                    <option value="Juru Tk. I / I-d">Golongan I/d - Juru Tk. I</option>
+                    <option value="Pengatur Muda / II-a">Golongan II/a - Pengatur Muda</option>
+                    <option value="Pengatur Muda Tk. I / II-b">Golongan II/b - Pengatur Muda Tk. I</option>
+                    <option value="Pengatur / II-c">Golongan II/c - Pengatur</option>
+                    <option value="Pengatur Tk. I / II-d">Golongan II/d - Pengatur Tk. I</option>
+                    <option value="Penata Muda / III-a">Golongan III/a - Penata Muda</option>
+                    <option value="Penata Muda Tk. I / III-b">Golongan III/b - Penata Muda Tk. I</option>
+                    <option value="Penata / III-c">Golongan III/c - Penata</option>
+                    <option value="Penata Tk. I / III-d">Golongan III/d - Penata Tk. I</option>
+                    <option value="Pembina / IV-a">Golongan IV/a - Pembina</option>
+                    <option value="Pembina Tk. I / IV-b">Golongan IV/b - Pembina Tk. I</option>
+                    <option value="Pembina Utama Muda / IV-c">Golongan IV/c - Pembina Utama Muda</option>
+                    <option value="Pembina Utama Madya / IV-d">Golongan IV/d - Pembina Utama Madya</option>
+                    <option value="Pembina Utama / IV-e">Golongan IV/e - Pembina Utama</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jabatan Pokok</label>
                   <input
                     type="text"
                     required
-                    placeholder="Penata Keuangan, Ka Sub, dll."
+                    placeholder="Contoh: Ka Sub Unit OP"
                     className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
                     value={newPersJabatan}
                     onChange={(e) => setNewPersJabatan(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Golongan Kedinasan</label>
-                  <input
-                    type="text"
-                    placeholder="Misal: Penata / III-c"
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersGolongan}
-                    onChange={(e) => setNewPersGolongan(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nomor Telepon Seluler</label>
-                  <input
-                    type="text"
-                    placeholder="Misal: 0812-..."
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersTelepon}
-                    onChange={(e) => setNewPersTelepon(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">E-mail Pegawai</label>
-                  <input
-                    type="email"
-                    placeholder="pegawai@sumutprov.go.id"
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-                    value={newPersEmail}
-                    onChange={(e) => setNewPersEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -1801,7 +1876,7 @@ export default function Penatausahaan({
                   type="submit"
                   className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
                 >
-                  Simpan Data
+                  {editingPersonelId ? 'Simpan Perubahan' : 'Tambah Pegawai'}
                 </button>
               </div>
             </form>

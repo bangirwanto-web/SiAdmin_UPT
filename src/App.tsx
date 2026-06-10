@@ -168,6 +168,7 @@ export default function App() {
             operasionalList={operasionalList}
             debitList={debitList}
             pembangunanList={pembangunanList}
+            personelList={personelList}
           />
         );
       case 'penatausahaan':
