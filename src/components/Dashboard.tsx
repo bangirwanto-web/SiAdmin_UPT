@@ -176,7 +176,7 @@ export default function Dashboard({
           <div className="flex justify-between items-center mb-5">
             <div>
               <h2 className="text-sm font-bold text-slate-800">Visual Tinggi Muka Air Sungai Bah Bolon</h2>
-              <p className="text-xs text-slate-500">Hasil pembacaan pos duga air otomatis UPTD PSA</p>
+              <p className="text-xs text-slate-500">Hasil pembacaan pos duga air otomatis UPTD PSDA</p>
             </div>
             <div className="flex gap-2 text-[10px]">
               <span className="flex items-center gap-1 text-slate-500"><span className="w-2.5 h-2.5 bg-sky-400 rounded-full"></span> Hulu</span>
