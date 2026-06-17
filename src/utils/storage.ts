@@ -1,4 +1,4 @@
-import { ProfileSettings, User, Surat, InventarisAset, KegiatanOperasional, DebitAir, ProyekPembangunan, Personel, Keuangan } from '../types';
+import { ProfileSettings, User, Surat, InventarisAset, KegiatanOperasional, DebitAir, ProyekPembangunan, Personel, Keuangan, InventarisDI, UsulKegiatan, ProgresPembangunanLapangan, KodeRekening, SpjRutin, Bapp } from '../types';
 
 // Default Profile Settings
 export const DEFAULT_PROFILE: ProfileSettings = {
@@ -106,40 +106,124 @@ export const DEFAULT_SURAT: Surat[] = [
 // Default Inventaris Aset
 export const DEFAULT_INVENTARIS: InventarisAset[] = [
   {
+    id: 'ast-a1',
+    namaAset: 'Tanah Lokasi Kantor UPTD Pengairan Bah Bolon',
+    kodeAset: 'SDA-KIB.A-1998-001',
+    kategori: 'Tanah',
+    jumlah: 1,
+    kondisi: 'Baik',
+    lokasi: 'Kec. Siantar Marimbun, Pematangsiantar',
+    kib: 'A'
+  },
+  {
     id: 'ast-1',
     namaAset: 'Alat Ukur Tinggi Air (Current Meter)',
-    kodeAset: 'SDA-AST-2024-001',
+    kodeAset: 'SDA-KIB.B-2024-001',
     kategori: 'Alat Ukur Teknis',
     jumlah: 3,
     kondisi: 'Baik',
-    lokasi: 'Gudang Kantor UPTD'
+    lokasi: 'Gudang Kantor UPTD',
+    kib: 'B'
   },
   {
     id: 'ast-2',
     namaAset: 'Pompa Air Diesel 3 Inch',
-    kodeAset: 'SDA-AST-2023-014',
+    kodeAset: 'SDA-KIB.B-2023-014',
     kategori: 'Peralatan O&M',
     jumlah: 2,
     kondisi: 'Baik',
-    lokasi: 'Pos Siaga Banjir'
+    lokasi: 'Pos Siaga Banjir',
+    kib: 'B'
   },
   {
     id: 'ast-3',
     namaAset: 'Laptop Kerja Lenovo ThinkBook',
-    kodeAset: 'SDA-AST-2025-009',
+    kodeAset: 'SDA-KIB.B-2025-009',
     kategori: 'Elektronik Kantor',
     jumlah: 5,
     kondisi: 'Baik',
-    lokasi: 'Ruang Staf Penatausahaan'
+    lokasi: 'Ruang Staf Penatausahaan',
+    kib: 'B'
   },
   {
     id: 'ast-4',
     namaAset: 'Motor Yamaha WR155R O&M',
-    kodeAset: 'SDA-AST-2024-032',
+    kodeAset: 'SDA-KIB.B-2024-032',
     kategori: 'Kendaraan Dinas',
     jumlah: 4,
     kondisi: 'Rusak Ringan',
-    lokasi: 'Garasi UPTD Bah Bolon'
+    lokasi: 'Garasi UPTD Bah Bolon',
+    kib: 'B'
+  },
+  {
+    id: 'ast-c1',
+    namaAset: 'Gedung Kantor Utama Dinas Pengairan UPTD Bah Bolon',
+    kodeAset: 'SDA-KIB.C-2005-001',
+    kategori: 'Gedung & Bangunan',
+    jumlah: 1,
+    kondisi: 'Baik',
+    lokasi: 'Jl. Asahan Km 4.5, Pematangsiantar',
+    kib: 'C'
+  },
+  {
+    id: 'ast-c2',
+    namaAset: 'Rumah Dinas Penjaga Bendung DI Karang Anyar',
+    kodeAset: 'SDA-KIB.C-2010-003',
+    kategori: 'Gedung & Bangunan',
+    jumlah: 1,
+    kondisi: 'Baik',
+    lokasi: 'Kompleks Bendung Karang Anyar',
+    kib: 'C'
+  },
+  {
+    id: 'ast-d1',
+    namaAset: 'Saluran Irigasi Kanan DI Bah Bolon Km. 0 - Km. 5',
+    kodeAset: 'SDA-KIB.D-1981-002',
+    kategori: 'Jalan, Irigasi & Jaringan',
+    jumlah: 1,
+    kondisi: 'Baik',
+    lokasi: 'DI Bah Bolon Utama',
+    kib: 'D'
+  },
+  {
+    id: 'ast-d2',
+    namaAset: 'Pintu Air Sorong Spindel Elektrik Bendung Utama',
+    kodeAset: 'SDA-KIB.D-2018-011',
+    kategori: 'Jalan, Irigasi & Jaringan',
+    jumlah: 4,
+    kondisi: 'Baik',
+    lokasi: 'Bendung Utama Bah Bolon',
+    kib: 'D'
+  },
+  {
+    id: 'ast-e1',
+    namaAset: 'Dokumen Peta Detail Desain Bendung (DED Bah Bolon 1999)',
+    kodeAset: 'SDA-KIB.E-1999-001',
+    kategori: 'Aset Tetap Lainnya',
+    jumlah: 3,
+    kondisi: 'Baik',
+    lokasi: 'Ruang Arsip Teknis',
+    kib: 'E'
+  },
+  {
+    id: 'ast-e2',
+    namaAset: 'Sertifikat Hak Pakai Tanah Negara UPTD Pengairan',
+    kodeAset: 'SDA-KIB.E-2002-005',
+    kategori: 'Aset Tetap Lainnya',
+    jumlah: 12,
+    kondisi: 'Baik',
+    lokasi: 'Brankas Kantor UPTD',
+    kib: 'E'
+  },
+  {
+    id: 'ast-f1',
+    namaAset: 'Rehabilitasi Tanggul Pagar Pintu Air Sekunder Km 4.2',
+    kodeAset: 'SDA-KIB.F-2026-003',
+    kategori: 'Konstruksi Dalam Pengerjaan',
+    jumlah: 1,
+    kondisi: 'Rusak Ringan',
+    lokasi: 'DI Bah Bolon Sekunder (On Progress)',
+    kib: 'F'
   }
 ];
 
@@ -338,6 +422,272 @@ export const DEFAULT_KEUANGAN: Keuangan[] = [
     tipe: 'Keluar',
     jumlah: 45000000,
     penanggungJawab: 'Budi Santoso, S.T.'
+  }
+];
+
+// Default Inventaris Daerah Irigasi (DI)
+export const DEFAULT_INVENTARIS_DI: InventarisDI[] = [
+  {
+    id: 'di-1',
+    namaDI: 'D.I. Bah Bolon Utama',
+    luasAreal: 2450,
+    panjangSaluran: 42.5,
+    jumlahBangunan: 18,
+    statusKewenangan: 'Provinsi',
+    keterangan: 'Kondisi suplesi air stabil sepanjang tahun dari Bendung Utama.',
+    bangunanPendukung: [
+      {
+        id: 'b-1-1',
+        nama: 'Pintu Air Sadap Sekunder Kanan',
+        kategori: 'Pintu Air',
+        kondisi: 'Baik',
+        latitude: 2.955401,
+        longitude: 99.062304,
+        fotoList: []
+      },
+      {
+        id: 'b-1-2',
+        nama: 'Kantor Pengamat Bendung Utama',
+        kategori: 'Lainnya',
+        kondisi: 'Baik',
+        latitude: 2.951230,
+        longitude: 99.051120,
+        fotoList: []
+      }
+    ]
+  },
+  {
+    id: 'di-2',
+    namaDI: 'D.I. Karang Anyar',
+    luasAreal: 1250,
+    panjangSaluran: 18.2,
+    jumlahBangunan: 9,
+    statusKewenangan: 'Provinsi',
+    keterangan: 'Saluran sekunder memerlukan pengerukan sedimen berkala.',
+    bangunanPendukung: [
+      {
+        id: 'b-2-1',
+        nama: 'Bendung Pelimpah Karang Anyar',
+        kategori: 'Bendung / Intake',
+        kondisi: 'Rusak Ringan',
+        latitude: 2.981120,
+        longitude: 99.081120,
+        fotoList: []
+      }
+    ]
+  },
+  {
+    id: 'di-3',
+    namaDI: 'D.I. Kerasaan',
+    luasAreal: 1980,
+    panjangSaluran: 28.4,
+    jumlahBangunan: 15,
+    statusKewenangan: 'Provinsi',
+    keterangan: 'Sistem giliran air diatur ketat saat musim kemarau.',
+    bangunanPendukung: [
+      {
+        id: 'b-3-1',
+        nama: 'Alat ukur debit Cipoletti Kerasaan',
+        kategori: 'Alat Ukur Debit',
+        kondisi: 'Baik',
+        latitude: 3.012110,
+        longitude: 99.123512,
+        fotoList: []
+      }
+    ]
+  }
+];
+
+// Default Usulan Kegiatan Hari Ini (Seksi Operasional O&M)
+export const DEFAULT_USUL_OP: UsulKegiatan[] = [
+  {
+    id: 'uop-1',
+    namaPekerjaan: 'Babat Semak Liar & Pembersihan Tanggul Sekunder',
+    lokasi: 'D.I. Bah Bolon Kanan Km 3.5',
+    estimasiBiaya: 18500000,
+    skalaPrioritas: 'Sedang',
+    diusulkanOleh: 'GP3A Sinar Tani Bah Bolon',
+    tanggalUsulan: '2026-06-12',
+    keterangan: 'Semak belukar menutupi jalan inspeksi patroli sungai.',
+    statusAproval: 'Ditinjau'
+  },
+  {
+    id: 'uop-2',
+    namaPekerjaan: 'Pelumasan Spindel Roda Gigi Pintu Air Sekunder',
+    lokasi: 'Pintu Sadap Karang Anyar No 4',
+    estimasiBiaya: 6500000,
+    skalaPrioritas: 'Tinggi',
+    diusulkanOleh: 'Juru Pengairan Karang Anyar',
+    tanggalUsulan: '2026-06-15',
+    keterangan: 'Pintu sorong sulit diputar manual oleh petugas pintu air.',
+    statusAproval: 'Disetujui'
+  }
+];
+
+// Default Usulan Konstruksi Baru (Seksi Pembangunan)
+export const DEFAULT_USUL_PEMB: UsulKegiatan[] = [
+  {
+    id: 'upb-1',
+    namaPekerjaan: 'Pemasangan Bronjong Batu Kali Kawat PVC Penahan Longsor',
+    lokasi: 'Sempadan Kali Bah Bolon Kec. Tanah Jawa',
+    estimasiBiaya: 450000000,
+    skalaPrioritas: 'Tinggi',
+    diusulkanOleh: 'Camat Tanah Jawa & Juru Pengairan',
+    tanggalUsulan: '2026-06-08',
+    keterangan: 'Tebing sungai longsor selebar 12 meter mendekati pemukiman.',
+    statusAproval: 'Ditinjau'
+  },
+  {
+    id: 'upb-2',
+    namaPekerjaan: 'Pembangunan Saluran Pasangan Batu Kali (Lining Beton)',
+    lokasi: 'Saluran Tersier Blok C D.I. Kerasaan',
+    estimasiBiaya: 320000000,
+    skalaPrioritas: 'Sedang',
+    diusulkanOleh: 'Seksi Pembangunan Internal',
+    tanggalUsulan: '2026-06-14',
+    keterangan: 'Saluran tanah sering jebol dan bocor menggenangi kebun sawit warga.',
+    statusAproval: 'Ditinjau'
+  }
+];
+
+// Default Progres Lapangan Milestones (Seksi Pembangunan)
+export const DEFAULT_PROGRES_LAPANGAN_PEMB: ProgresPembangunanLapangan[] = [
+  {
+    id: 'prg-1',
+    proyekId: 'pem-1',
+    namaProyek: 'Rehabilitasi Jaringan Irigasi D.I. Bah Bolon Kanan Simalungun',
+    uraianPekerjaanDetail: 'Pemasangan precast beton U-Ditch K-350 sepanjang 150 meter',
+    targetFisikMingguIni: 'Pencapaian target layout section 3A sampai selesai',
+    kendalaLapangan: 'Hujan deras pada sore hari menghentikan proses pengangkatan lifting crane.',
+    cuacaKondisi: 'Hujan Ringan',
+    tanggalUpdate: '2026-06-16'
+  },
+  {
+    id: 'prg-2',
+    proyekId: 'pem-2',
+    namaProyek: 'Pembangunan Bronjong Penahan Tebing Sungai Bah Bolon (Ruas Siantar Kota)',
+    uraianPekerjaanDetail: 'Pekerjaan perapihan top capping kawat bronjong baris teratas',
+    targetFisikMingguIni: 'Finishing & serah terima pekerjaan sementara awal (PHO)',
+    kendalaLapangan: 'Tidak ada kendala berarti, penataan estetika bantaran aman.',
+    cuacaKondisi: 'Cerah',
+    tanggalUpdate: '2026-06-14'
+  }
+];
+
+// Default Kode Rekening / Daftar Anggaran
+export const DEFAULT_KODE_REKENING: KodeRekening[] = [
+  {
+    id: 'kr-1',
+    kode: '5.1.01.01.0001',
+    nama: 'Belanja Gaji Pokok PNS',
+    pagu: 850000000,
+    realisasi: 420000000,
+    keterangan: 'Pagu alokasi belanja pegawai UPTD rutin bulanan Dinas SDA',
+    program: 'Program Penunjang Urusan Pemerintahan Daerah Provinsi',
+    kegiatan: 'Administrasi Keuangan Perangkat Daerah',
+    subKegiatan: 'Penyediaan Gaji dan Tunjangan ASN'
+  },
+  {
+    id: 'kr-2',
+    kode: '5.1.02.01.0012',
+    nama: 'Belanja Alat Tulis Kantor (ATK) & Office Supplies',
+    pagu: 45000000,
+    realisasi: 18450000,
+    keterangan: 'Pemenuhan kebutuhan alat tulis kantor pada Tata Usaha, O&M, Pembangunan, dan Humas',
+    program: 'Program Penunjang Urusan Pemerintahan Daerah Provinsi',
+    kegiatan: 'Administrasi Umum Perangkat Daerah',
+    subKegiatan: 'Penyediaan Peralatan dan Perlengkapan Kantor'
+  },
+  {
+    id: 'kr-3',
+    kode: '5.1.02.01.0024',
+    nama: 'Belanja Jasa Tenaga Teknik Operasional Pengairan',
+    pagu: 320000000,
+    realisasi: 160000000,
+    keterangan: 'Honorarium bulanan para juru, penjaga pintu air (PPA), dan pengamat wilayah Bah Bolon',
+    program: 'Program Pengelolaan Sumber Daya Air (SDA)',
+    kegiatan: 'Operasi dan Pemeliharaan Jaringan Irigasi',
+    subKegiatan: 'Pemeliharaan Rutin Jaringan Irigasi (Honorarium Tenaga Teknik)'
+  },
+  {
+    id: 'kr-4',
+    kode: '5.2.02.01.0005',
+    nama: 'Belanja Pemeliharaan Jaringan Irigasi & Bangunan Air',
+    pagu: 1200000000,
+    realisasi: 450000000,
+    keterangan: 'Rehabilitasi berkala jaringan irigasi sekunder/primer yang mengalami penurunan debit suplesi',
+    program: 'Program Pengelolaan Sumber Daya Air (SDA)',
+    kegiatan: 'Pengembangan dan Pengelolaan Sistem Irigasi',
+    subKegiatan: 'Rehabilitasi Jaringan Irigasi Permukaan'
+  }
+];
+
+// Default SPJ Rutin (Surat Pertanggungjawaban)
+export const DEFAULT_SPJ_RUTIN: SpjRutin[] = [
+  {
+    id: 'spj-1',
+    nomorSpj: '012/SPJ/RUTIN-SDA/VI/2026',
+    tanggal: '2026-06-03',
+    kodeRekeningId: 'kr-2',
+    namaKegiatan: 'Pembelian Kertas HVS, Tinta Printer, dan Map Arsip Semester I',
+    jumlah: 3250000,
+    berkasUrlList: [],
+    status: 'Disetujui',
+    keterangan: 'Lengkap dengan kuitansi toko ATK Merdeka dan dokumentasi fisik serah terima'
+  },
+  {
+    id: 'spj-2',
+    nomorSpj: '013/SPJ/RUTIN-SDA/VI/2026',
+    tanggal: '2026-06-10',
+    kodeRekeningId: 'kr-3',
+    namaKegiatan: 'Penyaluran Insentif Bulanan Juru Pengairan & PPA Periode Mei 2026',
+    jumlah: 24000000,
+    berkasUrlList: [],
+    status: 'Disetujui',
+    keterangan: 'Daftar hadir penandatanganan insentif 18 juru irigasi se-UPTD PSA Bah Bolon'
+  },
+  {
+    id: 'spj-3',
+    nomorSpj: '014/SPJ/RUTIN-SDA/VI/2026',
+    tanggal: '2026-06-15',
+    kodeRekeningId: 'kr-4',
+    namaKegiatan: 'Perbaikan Darurat Tanggul Saluran Pembuang D.I. Kerasaan',
+    jumlah: 15400000,
+    berkasUrlList: [],
+    status: 'Diajukan',
+    keterangan: 'Nota pembelian semen, pasir, sewa molen, dan upah tukang lokal'
+  }
+];
+
+// Default BAPP (Berita Acara Pembayaran & Penyerahan Pekerjaan)
+export const DEFAULT_BAPP: Bapp[] = [
+  {
+    id: 'bapp-1',
+    nomorBapp: '142/BAPP/PEMB-SDA/V/2026',
+    tanggal: '2026-05-20',
+    namaPekerjaan: 'Normalisasi Hulu Aliran Sungai Bah Bolon (Sektor Asupan Suplesi Pematangsiantar)',
+    nilaiKontrak: 450000000,
+    namaPenyedia: 'PT. Bah Bolon Karya Mandiri',
+    progresFisik: 100,
+    realisasiPembayaran: 450000000,
+    nomorSpk: '602.1/SPK-DI/UPTD-SDA/IV/2026',
+    fotoList: [],
+    status: 'Selesai',
+    keterangan: 'Serah terima pekerjaan PHO berjalan sukses, sedimentasi berhasil dikeruk sedalam 1.2 meter'
+  },
+  {
+    id: 'bapp-2',
+    nomorBapp: '178/BAPP/PEMB-SDA/VI/2026',
+    tanggal: '2026-06-12',
+    namaPekerjaan: 'Rehabilitasi Saluran Pasangan Batu D.I. Bah Bolon Kiri (Pemasangan U-Ditch 400M)',
+    nilaiKontrak: 720000000,
+    namaPenyedia: 'CV. Sinar Tani Jaya',
+    progresFisik: 75,
+    realisasiPembayaran: 540000000,
+    nomorSpk: '602.1/SPK-DI/UPTD-SDA/V/2026',
+    fotoList: [],
+    status: 'Dalam Proses',
+    keterangan: 'Sisa pembayaran 25% ditangguhkan menunggu pemasangan cap penutup beton tuntas dikerjakan'
   }
 ];
 

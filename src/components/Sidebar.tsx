@@ -11,7 +11,8 @@ import {
   User as UserIcon,
   ShieldCheck,
   ShieldAlert,
-  X
+  X,
+  Layers
 } from 'lucide-react';
 import { User, ProfileSettings } from '../types';
 
@@ -155,7 +156,10 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isAccessible = item.roleRequired === 'user' || currentUser.role === 'admin';
-              const isTabActive = activeTab === item.id || (item.id === 'penatausahaan' && activeTab.startsWith('penatausahaan-'));
+              const isTabActive = activeTab === item.id || 
+                                  (item.id === 'penatausahaan' && activeTab.startsWith('penatausahaan-')) ||
+                                  (item.id === 'operasional' && activeTab.startsWith('operasional-')) ||
+                                  (item.id === 'pembangunan' && activeTab.startsWith('pembangunan-'));
               
               return (
                 <React.Fragment key={item.id}>
@@ -196,6 +200,73 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
                       )}
                     </div>
                   </button>
+                  
+                  {/* Sub-pages list nested directly below Seksi Operasional */}
+                  {item.id === 'operasional' && isAccessible && (
+                    <div className="mt-1 mb-1 ml-4 border-l border-blue-900/60 pl-2.5 space-y-1 animate-fade-in-down">
+                      {[
+                        { id: 'operasional-inventaris-di', label: 'Inventaris DI' },
+                        { id: 'operasional-data-kegiatan', label: 'Data Kegiatan' },
+                        { id: 'operasional-progres-lapangan', label: 'Progres Lapangan' },
+                        { id: 'operasional-usul-kegiatan', label: 'Usul Kegiatan' }
+                      ].map((sub) => {
+                        const isSubActive = activeTab === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            id={`btn-nav-sub-${sub.id}`}
+                            onClick={() => {
+                              setActiveTab(sub.id);
+                              if (onClose) onClose();
+                            }}
+                            className={`w-full flex items-center justify-between py-1 px-2 rounded text-[11px] font-medium transition-all text-left ${
+                              isSubActive 
+                                ? 'text-sky-300 bg-blue-900/50 font-bold' 
+                                : 'text-blue-200/85 hover:text-white hover:bg-blue-900/15'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`w-1 h-1 rounded-full ${isSubActive ? 'bg-sky-450 bg-sky-400 scale-125' : 'bg-blue-800'}`}></span>
+                              <span>{sub.label}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Sub-pages list nested directly below Seksi Pembangunan */}
+                  {item.id === 'pembangunan' && isAccessible && (
+                    <div className="mt-1 mb-1 ml-4 border-l border-blue-900/60 pl-2.5 space-y-1 animate-fade-in-down">
+                      {[
+                        { id: 'pembangunan-data-kegiatan', label: 'Data Kegiatan' },
+                        { id: 'pembangunan-progres-lapangan', label: 'Progres Lapangan' },
+                        { id: 'pembangunan-usul-kegiatan', label: 'Usul Kegiatan' }
+                      ].map((sub) => {
+                        const isSubActive = activeTab === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            id={`btn-nav-sub-${sub.id}`}
+                            onClick={() => {
+                              setActiveTab(sub.id);
+                              if (onClose) onClose();
+                            }}
+                            className={`w-full flex items-center justify-between py-1 px-2 rounded text-[11px] font-medium transition-all text-left ${
+                              isSubActive 
+                                ? 'text-sky-300 bg-blue-900/50 font-bold' 
+                                : 'text-blue-200/85 hover:text-white hover:bg-blue-900/15'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`w-1 h-1 rounded-full ${isSubActive ? 'bg-sky-450 bg-sky-400 scale-125' : 'bg-blue-800'}`}></span>
+                              <span>{sub.label}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Sub-pages list nested directly below Penatausahaan */}
                   {item.id === 'penatausahaan' && isAccessible && (

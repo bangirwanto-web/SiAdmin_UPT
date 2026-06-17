@@ -45,6 +45,28 @@ export interface InventarisAset {
   jumlah: number;
   kondisi: 'Baik' | 'Rusak Ringan' | 'Rusak Berat';
   lokasi: string;
+  kib?: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'; // Kartu Inventaris Barang A s/d F
+}
+
+export interface DistribusiAset {
+  id: string;
+  asetId: string;
+  namaAset: string;
+  penerima: string;
+  jumlah: number;
+  tanggalDistribusi: string;
+  keterangan: string;
+  status: 'Aktif' | 'Dikembalikan' | 'Rusak';
+}
+
+export interface StokBarangHabis {
+  id: string;
+  namaBarang: string;
+  kategori: 'ATK' | 'Kebersihan' | 'K3 / Keamanan' | 'Konsumsi' | 'Lainnya';
+  stok: number;
+  satuan: string;
+  stokMinimum: number;
+  lokasiGudang: string;
 }
 
 export interface KegiatanOperasional {
@@ -155,4 +177,89 @@ export interface Keuangan {
   jumlah: number;
   penanggungJawab: string;
 }
+
+// Sub-pages Data Structures
+export interface BangunanPendukung {
+  id: string;
+  nama: string;
+  kategori: string; // e.g. "Pintu Air", "Bendung", "Alat Ukur / Takar", "Sipon", "Talang", "Gorong-gorong", "Lainnya"
+  kondisi: 'Baik' | 'Rusak Ringan' | 'Rusak Berat';
+  latitude: number;
+  longitude: number;
+  fotoList: string[]; // Base64 data URLs or uploaded file blobs
+}
+
+export interface InventarisDI {
+  id: string;
+  namaDI: string;
+  luasAreal: number; // Hektar (Ha)
+  panjangSaluran: number; // Km
+  jumlahBangunan?: number; // Unit
+  statusKewenangan: string; // e.g. "Provinsi", "Pusat", "Kabupaten"
+  keterangan: string;
+  bangunanPendukung?: BangunanPendukung[];
+}
+
+export interface UsulKegiatan {
+  id: string;
+  namaPekerjaan: string;
+  lokasi: string;
+  estimasiBiaya: number;
+  skalaPrioritas: 'Tinggi' | 'Sedang' | 'Rendah';
+  diusulkanOleh: string;
+  tanggalUsulan: string;
+  keterangan?: string;
+  statusAproval: 'Ditinjau' | 'Disetujui' | 'Ditangguhkan';
+}
+
+export interface ProgresPembangunanLapangan {
+  id: string;
+  proyekId: string;
+  namaProyek: string;
+  uraianPekerjaanDetail: string;
+  targetFisikMingguIni: string;
+  kendalaLapangan: string;
+  cuacaKondisi: 'Cerah' | 'Hujan Ringan' | 'Hujan Lebat';
+  tanggalUpdate: string;
+}
+
+export interface KodeRekening {
+  id: string;
+  kode: string;
+  nama: string;
+  pagu: number;
+  realisasi: number;
+  keterangan: string;
+  program?: string;
+  kegiatan?: string;
+  subKegiatan?: string;
+}
+
+export interface SpjRutin {
+  id: string;
+  nomorSpj: string;
+  tanggal: string;
+  kodeRekeningId: string;
+  namaKegiatan: string;
+  jumlah: number;
+  berkasUrlList: string[];
+  status: 'Draft' | 'Diajukan' | 'Disetujui' | 'Ditolak';
+  keterangan: string;
+}
+
+export interface Bapp {
+  id: string;
+  nomorBapp: string;
+  tanggal: string;
+  namaPekerjaan: string;
+  nilaiKontrak: number;
+  namaPenyedia: string;
+  progresFisik: number;
+  realisasiPembayaran: number;
+  nomorSpk: string;
+  fotoList: string[];
+  status: 'Dalam Proses' | 'Selesai';
+  keterangan: string;
+}
+
 

@@ -10,6 +10,8 @@ import {
   AlertCircle, 
   Database, 
   AlertTriangle,
+  Camera,
+  Paperclip,
   FolderMinus,
   Users,
   TrendingUp,
@@ -26,9 +28,33 @@ import {
   Image,
   Upload,
   Check,
-  User as UserIcon
+  User as UserIcon,
+  Package,
+  Share2,
+  Layers,
+  ChevronRight,
+  Boxes,
+  X
 } from 'lucide-react';
-import { User, Surat, InventarisAset, Personel, Keuangan, RiwayatKepangkatan, RiwayatKgb, RiwayatPendidikan, RiwayatOrangTua, RiwayatPasangan, RiwayatAnak } from '../types';
+import { 
+  User, 
+  Surat, 
+  InventarisAset, 
+  Personel, 
+  Keuangan, 
+  RiwayatKepangkatan, 
+  RiwayatKgb, 
+  RiwayatPendidikan, 
+  RiwayatOrangTua, 
+  RiwayatPasangan, 
+  RiwayatAnak,
+  DistribusiAset,
+  StokBarangHabis,
+  KodeRekening,
+  SpjRutin,
+  Bapp
+} from '../types';
+import { getFromStorage, saveToStorage, DEFAULT_KODE_REKENING, DEFAULT_SPJ_RUTIN, DEFAULT_BAPP } from '../utils/storage';
 
 interface PenatausahaanProps {
   currentUser: User;
@@ -73,6 +99,122 @@ export default function Penatausahaan({
   const [asetSearch, setAsetSearch] = useState('');
   const [asetFilterKondisi, setAsetFilterKondisi] = useState<'Semua' | 'Baik' | 'Rusak Ringan' | 'Rusak Berat'>('Semua');
   
+  // Aset Secondary Sub-tabs
+  const [asetSubTab, setAsetSubTab] = useState<'daftar' | 'distribusi' | 'stok'>('daftar');
+  
+  // Custom filter states for KIB
+  const [kibFilter, setKibFilter] = useState<'Semua' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F'>('Semua');
+
+  // Stok & Distribusi lists with localStorage persistence
+  const [distribusiList, setDistribusiList] = useState<DistribusiAset[]>(() => {
+    const DEFAULT_DISTRIBUSI: DistribusiAset[] = [
+      {
+        id: 'dist-1',
+        asetId: 'ast-3',
+        namaAset: 'Laptop Kerja Lenovo ThinkBook',
+        penerima: 'Sri Wahyuni, A.Md. (Bagian Keuangan)',
+        jumlah: 1,
+        tanggalDistribusi: '2025-02-10',
+        keterangan: 'Untuk operasional perbendaharaan dan pembukuan anggaran',
+        status: 'Aktif'
+      },
+      {
+        id: 'dist-2',
+        asetId: 'ast-4',
+        namaAset: 'Motor Yamaha WR155R O&M',
+        penerima: 'Joko Purwanto (Seksi O&M)',
+        jumlah: 1,
+        tanggalDistribusi: '2024-05-15',
+        keterangan: 'Kendaraan dinas operasional pemantauan berkala bendung',
+        status: 'Aktif'
+      },
+      {
+        id: 'dist-3',
+        asetId: 'ast-2',
+        namaAset: 'Pompa Air Diesel 3 Inch',
+        penerima: 'Supardi / Koordinator Juru Pengairan',
+        jumlah: 1,
+        tanggalDistribusi: '2023-08-20',
+        keterangan: 'Standby di Pos Siaga Banjir Karang Anyar',
+        status: 'Aktif'
+      }
+    ];
+    return getFromStorage<DistribusiAset[]>('sia_distribusi_list', DEFAULT_DISTRIBUSI);
+  });
+
+  const [stokHabisList, setStokHabisList] = useState<StokBarangHabis[]>(() => {
+    const DEFAULT_STOK_HABIS: StokBarangHabis[] = [
+      {
+        id: 'stok-1',
+        namaBarang: 'Kertas HVS A4 80gr Sinar Dunia',
+        kategori: 'ATK',
+        stok: 15,
+        satuan: 'Rim',
+        stokMinimum: 5,
+        lokasiGudang: 'Lemari ATK Ruang Tata Usaha'
+      },
+      {
+        id: 'stok-2',
+        namaBarang: 'Tinta HP GT53 Black (Original)',
+        kategori: 'ATK',
+        stok: 2,
+        satuan: 'Botol',
+        stokMinimum: 3,
+        lokasiGudang: 'Lemari ATK Ruang Staf'
+      },
+      {
+        id: 'stok-3',
+        namaBarang: 'Sabun Cuci Tangan Jelas Cair',
+        kategori: 'Kebersihan',
+        stok: 8,
+        satuan: 'Botol',
+        stokMinimum: 2,
+        lokasiGudang: 'Gudang Alat Bersih'
+      },
+      {
+        id: 'stok-4',
+        namaBarang: 'Rompi Keselamatan K3 Orange',
+        kategori: 'K3 / Keamanan',
+        stok: 12,
+        satuan: 'Pcs',
+        stokMinimum: 4,
+        lokasiGudang: 'Lemari Peralatan O&M'
+      },
+      {
+        id: 'stok-5',
+        namaBarang: 'Air Mineral Gelas Club 240ml',
+        kategori: 'Konsumsi',
+        stok: 4,
+        satuan: 'Kardus',
+        stokMinimum: 2,
+        lokasiGudang: 'Dapur Kantor UPTD'
+      }
+    ];
+    return getFromStorage<StokBarangHabis[]>('sia_stok_habis_list', DEFAULT_STOK_HABIS);
+  });
+
+  // State handles for Distribusi & Stok modals
+  const [isDistribusiModalOpen, setIsDistribusiModalOpen] = useState(false);
+  const [isStokModalOpen, setIsStokModalOpen] = useState(false);
+
+  // New Distribusi Form State
+  const [newDistAsetId, setNewDistAsetId] = useState('');
+  const [newDistPenerima, setNewDistPenerima] = useState('');
+  const [newDistJumlah, setNewDistJumlah] = useState(1);
+  const [newDistTanggal, setNewDistTanggal] = useState(new Date().toISOString().split('T')[0]);
+  const [newDistKeterangan, setNewDistKeterangan] = useState('');
+  const [newDistStatus, setNewDistStatus] = useState<'Aktif' | 'Dikembalikan' | 'Rusak'>('Aktif');
+  const [editingDistId, setEditingDistId] = useState<string | null>(null);
+
+  // New Stok Habis Form State
+  const [newStokNama, setNewStokNama] = useState('');
+  const [newStokKategori, setNewStokKategori] = useState<'ATK' | 'Kebersihan' | 'K3 / Keamanan' | 'Konsumsi' | 'Lainnya'>('ATK');
+  const [newStokJumlah, setNewStokJumlah] = useState(10);
+  const [newStokSatuan, setNewStokSatuan] = useState('Pcs');
+  const [newStokMinimum, setNewStokMinimum] = useState(5);
+  const [newStokGudang, setNewStokGudang] = useState('');
+  const [editingStokId, setEditingStokId] = useState<string | null>(null);
+  
   // Personel Search & Filter
   const [personelSearch, setPersonelSearch] = useState('');
   const [personelFilterStatus, setPersonelFilterStatus] = useState<'Semua' | 'PNS' | 'PPPK' | 'Honor Daerah' | 'Kontrak'>('Semua');
@@ -81,6 +223,72 @@ export default function Penatausahaan({
   const [keuanganSearch, setKeuanganSearch] = useState('');
   const [keuanganFilterKategori, setKeuanganFilterKategori] = useState<'Semua' | 'Anggaran DIPA' | 'Belanja Operasional' | 'Pemeliharaan' | 'Honorarium' | 'Lain-lain'>('Semua');
   const [keuanganFilterTipe, setKeuanganFilterTipe] = useState<'Semua' | 'Masuk' | 'Keluar'>('Semua');
+
+  // Keuangan Subtabs State (Kode rekening, SPJ Rutin, BAPP, Ledger/Buku Kas)
+  const [keuanganSubTab, setKeuanganSubTab] = useState<'buku-kas' | 'kode-rekening' | 'spj-rutin' | 'bapp'>('spj-rutin');
+  const [spjViewMode, setSpjViewMode] = useState<'pengajuan' | 'buku-kas'>('pengajuan');
+
+  const [kodeRekeningList, setKodeRekeningList] = useState<KodeRekening[]>(() => {
+    return getFromStorage<KodeRekening[]>('sia_kode_rekening_list', DEFAULT_KODE_REKENING);
+  });
+  const [spjRutinList, setSpjRutinList] = useState<SpjRutin[]>(() => {
+    return getFromStorage<SpjRutin[]>('sia_spj_rutin_list', DEFAULT_SPJ_RUTIN);
+  });
+  const [bappList, setBappList] = useState<Bapp[]>(() => {
+    return getFromStorage<Bapp[]>('sia_bapp_list', DEFAULT_BAPP);
+  });
+
+  // Search and Filter states
+  const [krSearch, setKrSearch] = useState('');
+  const [spjSearch, setSpjSearch] = useState('');
+  const [spjFilterStatus, setSpjFilterStatus] = useState<'Semua' | 'Draft' | 'Diajukan' | 'Disetujui' | 'Ditolak'>('Semua');
+  const [bappSearch, setBappSearch] = useState('');
+  const [bappFilterStatus, setBappFilterStatus] = useState<'Semua' | 'Dalam Proses' | 'Selesai'>('Semua');
+
+  // Modal Triggers
+  const [isKrModalOpen, setIsKrModalOpen] = useState(false);
+  const [isSpjModalOpen, setIsSpjModalOpen] = useState(false);
+  const [isBappModalOpen, setIsBappModalOpen] = useState(false);
+
+  // Form States - Kode Rekening
+  const [newKrKode, setNewKrKode] = useState('');
+  const [newKrNama, setNewKrNama] = useState('');
+  const [newKrPagu, setNewKrPagu] = useState<string>('');
+  const [newKrRealisasi, setNewKrRealisasi] = useState<string>('');
+  const [newKrKeterangan, setNewKrKeterangan] = useState('');
+  const [newKrProgram, setNewKrProgram] = useState('');
+  const [newKrKegiatan, setNewKrKegiatan] = useState('');
+  const [newKrSubKegiatan, setNewKrSubKegiatan] = useState('');
+  const [editingKrId, setEditingKrId] = useState<string | null>(null);
+
+  // Form States - SPJ Rutin
+  const [newSpjNomor, setNewSpjNomor] = useState('');
+  const [newSpjTanggal, setNewSpjTanggal] = useState(new Date().toISOString().split('T')[0]);
+  const [newSpjKodeRekeningId, setNewSpjKodeRekeningId] = useState('');
+  const [newSpjNamaKegiatan, setNewSpjNamaKegiatan] = useState('');
+  const [newSpjJumlah, setNewSpjJumlah] = useState<string>('');
+  const [newSpjKeterangan, setNewSpjKeterangan] = useState('');
+  const [newSpjStatus, setNewSpjStatus] = useState<'Draft' | 'Diajukan' | 'Disetujui' | 'Ditolak'>('Draft');
+  const [newSpjBerkasUrlList, setNewSpjBerkasUrlList] = useState<string[]>([]);
+  const [editingSpjId, setEditingSpjId] = useState<string | null>(null);
+
+  // Form States - BAPP
+  const [newBappNomor, setNewBappNomor] = useState('');
+  const [newBappTanggal, setNewBappTanggal] = useState(new Date().toISOString().split('T')[0]);
+  const [newBappNamaPekerjaan, setNewBappNamaPekerjaan] = useState('');
+  const [newBappNilaiKontrak, setNewBappNilaiKontrak] = useState<string>('');
+  const [newBappNamaPenyedia, setNewBappNamaPenyedia] = useState('');
+  const [newBappProgresFisik, setNewBappProgresFisik] = useState<string>('0');
+  const [newBappRealisasiPembayaran, setNewBappRealisasiPembayaran] = useState<string>('');
+  const [newBappNomorSpk, setNewBappNomorSpk] = useState('');
+  const [newBappFotoList, setNewBappFotoList] = useState<string[]>([]);
+  const [newBappStatus, setNewBappStatus] = useState<'Dalam Proses' | 'Selesai'>('Dalam Proses');
+  const [newBappKeterangan, setNewBappKeterangan] = useState('');
+  const [editingBappId, setEditingBappId] = useState<string | null>(null);
+
+  // Unified camera states (specific for supporting device camera in BAPP)
+  const [isBappCameraActive, setIsBappCameraActive] = useState(false);
+  const [bappCameraMediaStream, setBappCameraMediaStream] = useState<MediaStream | null>(null);
 
   // Dialog Overlays
   const [isSuratModalOpen, setIsSuratModalOpen] = useState(false);
@@ -109,6 +317,7 @@ export default function Penatausahaan({
   const [newAsetJumlah, setNewAsetJumlah] = useState(1);
   const [newAsetKondisi, setNewAsetKondisi] = useState<'Baik' | 'Rusak Ringan' | 'Rusak Berat'>('Baik');
   const [newAsetLokasi, setNewAsetLokasi] = useState('');
+  const [newAsetKib, setNewAsetKib] = useState<'A' | 'B' | 'C' | 'D' | 'E' | 'F'>('B');
 
   // New Personel Form State
   const [newPersNip, setNewPersNip] = useState('');
@@ -233,6 +442,7 @@ export default function Penatausahaan({
     setNewAsetJumlah(aset.jumlah);
     setNewAsetKondisi(aset.kondisi);
     setNewAsetLokasi(aset.lokasi);
+    setNewAsetKib(aset.kib || 'B');
     setIsAsetModalOpen(true);
   };
 
@@ -244,6 +454,7 @@ export default function Penatausahaan({
     setNewAsetJumlah(1);
     setNewAsetKondisi('Baik');
     setNewAsetLokasi('');
+    setNewAsetKib('B');
     setIsAsetModalOpen(true);
   };
 
@@ -399,7 +610,8 @@ export default function Penatausahaan({
       kategori: newAsetKategori || 'Peralatan Umum',
       jumlah: Number(newAsetJumlah),
       kondisi: newAsetKondisi,
-      lokasi: newAsetLokasi || 'Kantor UPTD'
+      lokasi: newAsetLokasi || 'Kantor UPTD',
+      kib: newAsetKib
     };
 
     if (editingAsetId) {
@@ -417,11 +629,144 @@ export default function Penatausahaan({
     setNewAsetJumlah(1);
     setNewAsetKondisi('Baik');
     setNewAsetLokasi('');
+    setNewAsetKib('B');
   };
 
   const handleDeleteAset = (id: string) => {
     if (confirm('Hapus aset ini dari inventaris instansi?')) {
       setInventarisList(inventarisList.filter(a => a.id !== id));
+    }
+  };
+
+  // CRUD handlers for Distribusi Aset
+  const handleAddDistribusi = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDistAsetId || !newDistPenerima) return;
+    const selectedAset = inventarisList.find(a => a.id === newDistAsetId);
+
+    // Validation rule: "jangan izinkan data di input kembali bila statusnya aktif atau rusak"
+    const isDistributedActive = distribusiList.some(
+      d => d.asetId === newDistAsetId && d.id !== editingDistId && d.status === 'Aktif'
+    );
+    const isDistributedBroken = distribusiList.some(
+      d => d.asetId === newDistAsetId && d.id !== editingDistId && d.status === 'Rusak'
+    );
+    const isPhysicalBroken = selectedAset ? (selectedAset.kondisi === 'Rusak Ringan' || selectedAset.kondisi === 'Rusak Berat') : false;
+
+    if (isPhysicalBroken) {
+      alert("Aset tidak dapat didistribusikan karena kondisi fisiknya rusak.");
+      return;
+    }
+    if (isDistributedActive) {
+      alert("Aset tidak dapat didistribusikan karena status distribusinya masih aktif digunakan.");
+      return;
+    }
+    if (isDistributedBroken) {
+      alert("Aset tidak dapat didistribusikan karena status distribusinya rusak.");
+      return;
+    }
+
+    const namaAset = selectedAset ? selectedAset.namaAset : 'Aset Lainnya';
+    const newItem: DistribusiAset = {
+      id: editingDistId || `dist-${Date.now()}`,
+      asetId: newDistAsetId,
+      namaAset,
+      penerima: newDistPenerima,
+      jumlah: Number(newDistJumlah),
+      tanggalDistribusi: newDistTanggal,
+      keterangan: newDistKeterangan,
+      status: newDistStatus
+    };
+
+    let updated: DistribusiAset[];
+    if (editingDistId) {
+      updated = distribusiList.map(d => d.id === editingDistId ? newItem : d);
+    } else {
+      updated = [newItem, ...distribusiList];
+    }
+    setDistribusiList(updated);
+    saveToStorage('sia_distribusi_list', updated);
+    setIsDistribusiModalOpen(false);
+    setEditingDistId(null);
+    
+    // Reset
+    setNewDistAsetId('');
+    setNewDistPenerima('');
+    setNewDistJumlah(1);
+    setNewDistTanggal(new Date().toISOString().split('T')[0]);
+    setNewDistKeterangan('');
+    setNewDistStatus('Aktif');
+  };
+
+  const handleEditDistClick = (item: DistribusiAset) => {
+    setEditingDistId(item.id);
+    setNewDistAsetId(item.asetId);
+    setNewDistPenerima(item.penerima);
+    setNewDistJumlah(item.jumlah);
+    setNewDistTanggal(item.tanggalDistribusi);
+    setNewDistKeterangan(item.keterangan || '');
+    setNewDistStatus(item.status);
+    setIsDistribusiModalOpen(true);
+  };
+
+  const handleDeleteDist = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus catatan distribusi ini?')) {
+      const updated = distribusiList.filter(d => d.id !== id);
+      setDistribusiList(updated);
+      saveToStorage('sia_distribusi_list', updated);
+    }
+  };
+
+  // CRUD handlers for Stok Barang Habis
+  const handleAddStok = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStokNama || !newStokGudang) return;
+    const newItem: StokBarangHabis = {
+      id: editingStokId || `stok-${Date.now()}`,
+      namaBarang: newStokNama,
+      kategori: newStokKategori,
+      stok: Number(newStokJumlah),
+      satuan: newStokSatuan,
+      stokMinimum: Number(newStokMinimum),
+      lokasiGudang: newStokGudang
+    };
+
+    let updated: StokBarangHabis[];
+    if (editingStokId) {
+      updated = stokHabisList.map(s => s.id === editingStokId ? newItem : s);
+    } else {
+      updated = [newItem, ...stokHabisList];
+    }
+    setStokHabisList(updated);
+    saveToStorage('sia_stok_habis_list', updated);
+    setIsStokModalOpen(false);
+    setEditingStokId(null);
+
+    // Reset
+    setNewStokNama('');
+    setNewStokKategori('ATK');
+    setNewStokJumlah(10);
+    setNewStokSatuan('Pcs');
+    setNewStokMinimum(5);
+    setNewStokGudang('');
+  };
+
+  const handleEditStokClick = (item: StokBarangHabis) => {
+    setEditingStokId(item.id);
+    setNewStokNama(item.namaBarang);
+    setNewStokKategori(item.kategori);
+    setNewStokJumlah(item.stok);
+    setNewStokSatuan(item.satuan);
+    setNewStokMinimum(item.stokMinimum);
+    setNewStokGudang(item.lokasiGudang);
+    setIsStokModalOpen(true);
+  };
+
+  const handleDeleteStok = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus barang pakai habis ini?')) {
+      const updated = stokHabisList.filter(s => s.id !== id);
+      setStokHabisList(updated);
+      saveToStorage('sia_stok_habis_list', updated);
     }
   };
 
@@ -631,6 +976,326 @@ export default function Penatausahaan({
     }
   };
 
+  // ==================== KODE REKENING CRUD ====================
+  const handleSaveKodeRekening = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKrKode || !newKrNama) return;
+
+    const newItem: KodeRekening = {
+      id: editingKrId || `kr-${Date.now()}`,
+      kode: newKrKode,
+      nama: newKrNama,
+      pagu: Number(newKrPagu) || 0,
+      realisasi: Number(newKrRealisasi) || 0,
+      keterangan: newKrKeterangan,
+      program: newKrProgram,
+      kegiatan: newKrKegiatan,
+      subKegiatan: newKrSubKegiatan
+    };
+
+    let updatedList: KodeRekening[];
+    if (editingKrId) {
+      updatedList = kodeRekeningList.map(kr => kr.id === editingKrId ? newItem : kr);
+    } else {
+      updatedList = [...kodeRekeningList, newItem];
+    }
+    setKodeRekeningList(updatedList);
+    saveToStorage('sia_kode_rekening_list', updatedList);
+
+    // Reset Form
+    setIsKrModalOpen(false);
+    setEditingKrId(null);
+    setNewKrKode('');
+    setNewKrNama('');
+    setNewKrPagu('');
+    setNewKrRealisasi('');
+    setNewKrKeterangan('');
+    setNewKrProgram('');
+    setNewKrKegiatan('');
+    setNewKrSubKegiatan('');
+  };
+
+  const handleDeleteKodeRekening = (id: string) => {
+    if (confirm('Hapus kode rekening ini?')) {
+      const updatedList = kodeRekeningList.filter(kr => kr.id !== id);
+      setKodeRekeningList(updatedList);
+      saveToStorage('sia_kode_rekening_list', updatedList);
+    }
+  };
+
+  const handleEditKrClick = (kr: KodeRekening) => {
+    setEditingKrId(kr.id);
+    setNewKrKode(kr.kode);
+    setNewKrNama(kr.nama);
+    setNewKrPagu(kr.pagu.toString());
+    setNewKrRealisasi(kr.realisasi.toString());
+    setNewKrKeterangan(kr.keterangan || '');
+    setNewKrProgram(kr.program || '');
+    setNewKrKegiatan(kr.kegiatan || '');
+    setNewKrSubKegiatan(kr.subKegiatan || '');
+    setIsKrModalOpen(true);
+  };
+
+  const handleCreateKrTrigger = () => {
+    setEditingKrId(null);
+    setNewKrKode('');
+    setNewKrNama('');
+    setNewKrPagu('');
+    setNewKrRealisasi('');
+    setNewKrKeterangan('');
+    setNewKrProgram('');
+    setNewKrKegiatan('');
+    setNewKrSubKegiatan('');
+    setIsKrModalOpen(true);
+  };
+
+  // ==================== SPJ RUTIN CRUD ====================
+  const handleSaveSpjRutin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSpjNomor || !newSpjNamaKegiatan || !newSpjKodeRekeningId) return;
+
+    const newItem: SpjRutin = {
+      id: editingSpjId || `spj-${Date.now()}`,
+      nomorSpj: newSpjNomor,
+      tanggal: newSpjTanggal,
+      kodeRekeningId: newSpjKodeRekeningId,
+      namaKegiatan: newSpjNamaKegiatan,
+      jumlah: Number(newSpjJumlah) || 0,
+      berkasUrlList: newSpjBerkasUrlList,
+      status: newSpjStatus,
+      keterangan: newSpjKeterangan
+    };
+
+    let updatedList: SpjRutin[];
+    if (editingSpjId) {
+      updatedList = spjRutinList.map(spj => spj.id === editingSpjId ? newItem : spj);
+    } else {
+      updatedList = [...spjRutinList, newItem];
+    }
+    setSpjRutinList(updatedList);
+    saveToStorage('sia_spj_rutin_list', updatedList);
+
+    // If approved, verify and update the realisasi field on Kode Rekening automatically!
+    if (newItem.status === 'Disetujui') {
+      const updatedKr = kodeRekeningList.map(kr => {
+        if (kr.id === newItem.kodeRekeningId) {
+          const approvedSum = updatedList
+            .filter(sh => sh.kodeRekeningId === kr.id && sh.status === 'Disetujui')
+            .reduce((sum, current) => sum + current.jumlah, 0);
+          return { ...kr, realisasi: approvedSum };
+        }
+        return kr;
+      });
+      setKodeRekeningList(updatedKr);
+      saveToStorage('sia_kode_rekening_list', updatedKr);
+    }
+
+    // Reset Form
+    setIsSpjModalOpen(false);
+    setEditingSpjId(null);
+    setNewSpjNomor('');
+    setNewSpjTanggal(new Date().toISOString().split('T')[0]);
+    setNewSpjKodeRekeningId('');
+    setNewSpjNamaKegiatan('');
+    setNewSpjJumlah('');
+    setNewSpjKeterangan('');
+    setNewSpjStatus('Draft');
+    setNewSpjBerkasUrlList([]);
+  };
+
+  const handleDeleteSpjRutin = (id: string) => {
+    if (confirm('Hapus berkas pertanggungjawaban SPJ ini?')) {
+      const updatedList = spjRutinList.filter(spj => spj.id !== id);
+      setSpjRutinList(updatedList);
+      saveToStorage('sia_spj_rutin_list', updatedList);
+    }
+  };
+
+  const handleEditSpjClick = (spj: SpjRutin) => {
+    setEditingSpjId(spj.id);
+    setNewSpjNomor(spj.nomorSpj);
+    setNewSpjTanggal(spj.tanggal);
+    setNewSpjKodeRekeningId(spj.kodeRekeningId);
+    setNewSpjNamaKegiatan(spj.namaKegiatan);
+    setNewSpjJumlah(spj.jumlah.toString());
+    setNewSpjKeterangan(spj.keterangan);
+    setNewSpjStatus(spj.status);
+    setNewSpjBerkasUrlList(spj.berkasUrlList);
+    setIsSpjModalOpen(true);
+  };
+
+  const handleCreateSpjTrigger = () => {
+    setEditingSpjId(null);
+    setNewSpjNomor('');
+    setNewSpjTanggal(new Date().toISOString().split('T')[0]);
+    setNewSpjKodeRekeningId(kodeRekeningList[0]?.id || '');
+    setNewSpjNamaKegiatan('');
+    setNewSpjJumlah('');
+    setNewSpjKeterangan('');
+    setNewSpjStatus('Draft');
+    setNewSpjBerkasUrlList([]);
+    setIsSpjModalOpen(true);
+  };
+
+  const handleSpjFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setNewSpjBerkasUrlList(prev => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file as Blob);
+      });
+    }
+  };
+
+  // ==================== BAPP CRUD & CAMERA ====================
+  const handleSaveBapp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBappNomor || !newBappNamaPekerjaan || !newBappNamaPenyedia) return;
+
+    const newItem: Bapp = {
+      id: editingBappId || `bapp-${Date.now()}`,
+      nomorBapp: newBappNomor,
+      tanggal: newBappTanggal,
+      namaPekerjaan: newBappNamaPekerjaan,
+      nilaiKontrak: Number(newBappNilaiKontrak) || 0,
+      namaPenyedia: newBappNamaPenyedia,
+      progresFisik: Number(newBappProgresFisik) || 0,
+      realisasiPembayaran: Number(newBappRealisasiPembayaran) || 0,
+      nomorSpk: newBappNomorSpk,
+      fotoList: newBappFotoList,
+      status: newBappStatus,
+      keterangan: newBappKeterangan
+    };
+
+    let updatedList: Bapp[];
+    if (editingBappId) {
+      updatedList = bappList.map(bp => bp.id === editingBappId ? newItem : bp);
+    } else {
+      updatedList = [...bappList, newItem];
+    }
+    setBappList(updatedList);
+    saveToStorage('sia_bapp_list', updatedList);
+
+    // Reset Form
+    stopBappCamera();
+    setIsBappModalOpen(false);
+    setEditingBappId(null);
+    setNewBappNomor('');
+    setNewBappTanggal(new Date().toISOString().split('T')[0]);
+    setNewBappNamaPekerjaan('');
+    setNewBappNilaiKontrak('');
+    setNewBappNamaPenyedia('');
+    setNewBappProgresFisik('0');
+    setNewBappRealisasiPembayaran('');
+    setNewBappNomorSpk('');
+    setNewBappFotoList([]);
+    setNewBappStatus('Dalam Proses');
+    setNewBappKeterangan('');
+  };
+
+  const handleDeleteBapp = (id: string) => {
+    if (confirm('Hapus Berita Acara (BAPP) ini?')) {
+      const updatedList = bappList.filter(bp => bp.id !== id);
+      setBappList(updatedList);
+      saveToStorage('sia_bapp_list', updatedList);
+    }
+  };
+
+  const handleEditBappClick = (b: Bapp) => {
+    setEditingBappId(b.id);
+    setNewBappNomor(b.nomorBapp);
+    setNewBappTanggal(b.tanggal);
+    setNewBappNamaPekerjaan(b.namaPekerjaan);
+    setNewBappNilaiKontrak(b.nilaiKontrak.toString());
+    setNewBappNamaPenyedia(b.namaPenyedia);
+    setNewBappProgresFisik(b.progresFisik.toString());
+    setNewBappRealisasiPembayaran(b.realisasiPembayaran.toString());
+    setNewBappNomorSpk(b.nomorSpk);
+    setNewBappFotoList(b.fotoList);
+    setNewBappStatus(b.status);
+    setNewBappKeterangan(b.keterangan);
+    setIsBappModalOpen(true);
+  };
+
+  const handleCreateBappTrigger = () => {
+    setEditingBappId(null);
+    setNewBappNomor('');
+    setNewBappTanggal(new Date().toISOString().split('T')[0]);
+    setNewBappNamaPekerjaan('');
+    setNewBappNilaiKontrak('');
+    setNewBappNamaPenyedia('');
+    setNewBappProgresFisik('0');
+    setNewBappRealisasiPembayaran('');
+    setNewBappNomorSpk('');
+    setNewBappFotoList([]);
+    setNewBappStatus('Dalam Proses');
+    setNewBappKeterangan('');
+    setIsBappModalOpen(true);
+  };
+
+  const handleBappFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            setNewBappFotoList(prev => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file as Blob);
+      });
+    }
+  };
+
+  // CAMERA UTILS FOR BAPP
+  const startBappCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      setBappCameraMediaStream(stream);
+      setIsBappCameraActive(true);
+      setTimeout(() => {
+        const videoElement = document.getElementById('bapp-camera-preview') as HTMLVideoElement;
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+      }, 300);
+    } catch (err) {
+      console.error('Failed to start webcam:', err);
+      alert('Kamera tidak dapat diakses atau diblokir.');
+    }
+  };
+
+  const stopBappCamera = () => {
+    if (bappCameraMediaStream) {
+      bappCameraMediaStream.getTracks().forEach(track => track.stop());
+      setBappCameraMediaStream(null);
+    }
+    setIsBappCameraActive(false);
+  };
+
+  const captureBappPhoto = () => {
+    const videoElement = document.getElementById('bapp-camera-preview') as HTMLVideoElement;
+    if (!videoElement) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElement.videoWidth || 640;
+    canvas.height = videoElement.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      setNewBappFotoList(prev => [...prev, dataUrl]);
+    }
+  };
+
   const handleExportExcel = () => {
     if (filteredSurat.length === 0) {
       alert('Tidak ada data surat untuk diekport.');
@@ -715,7 +1380,22 @@ export default function Penatausahaan({
                           a.kodeAset.toLowerCase().includes(asetSearch.toLowerCase()) ||
                           a.lokasi.toLowerCase().includes(asetSearch.toLowerCase());
     const matchesKondisi = asetFilterKondisi === 'Semua' || a.kondisi === asetFilterKondisi;
-    return matchesSearch && matchesKondisi;
+    const matchesKib = kibFilter === 'Semua' || a.kib === kibFilter;
+    return matchesSearch && matchesKondisi && matchesKib;
+  });
+
+  const filteredDistribusi = distribusiList.filter(d => {
+    const searchLow = asetSearch.toLowerCase();
+    return d.namaAset.toLowerCase().includes(searchLow) ||
+           d.penerima.toLowerCase().includes(searchLow) ||
+           (d.keterangan || '').toLowerCase().includes(searchLow);
+  });
+
+  const filteredStokHabis = stokHabisList.filter(s => {
+    const searchLow = asetSearch.toLowerCase();
+    return s.namaBarang.toLowerCase().includes(searchLow) ||
+           s.kategori.toLowerCase().includes(searchLow) ||
+           s.lokasiGudang.toLowerCase().includes(searchLow);
   });
 
   const filteredPersonel = personelList.filter(p => {
@@ -866,6 +1546,29 @@ export default function Penatausahaan({
     return matchesSearch && matchesKategori && matchesTipe;
   });
 
+  const filteredKr = kodeRekeningList.filter(kr => {
+    return kr.kode.toLowerCase().includes(krSearch.toLowerCase()) ||
+           kr.nama.toLowerCase().includes(krSearch.toLowerCase()) ||
+           (kr.keterangan || '').toLowerCase().includes(krSearch.toLowerCase());
+  });
+
+  const filteredSpj = spjRutinList.filter(spj => {
+    const matchesSearch = spj.nomorSpj.toLowerCase().includes(spjSearch.toLowerCase()) ||
+                          spj.namaKegiatan.toLowerCase().includes(spjSearch.toLowerCase()) ||
+                          (spj.keterangan || '').toLowerCase().includes(spjSearch.toLowerCase());
+    const matchesStatus = spjFilterStatus === 'Semua' || spj.status === spjFilterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredBapp = bappList.filter(bp => {
+    const matchesSearch = bp.nomorBapp.toLowerCase().includes(bappSearch.toLowerCase()) ||
+                          bp.namaPekerjaan.toLowerCase().includes(bappSearch.toLowerCase()) ||
+                          bp.namaPenyedia.toLowerCase().includes(bappSearch.toLowerCase()) ||
+                          (bp.keterangan || '').toLowerCase().includes(bappSearch.toLowerCase());
+    const matchesStatus = bappFilterStatus === 'Semua' || bp.status === bappFilterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
   // Calculate finance metrics
   const totalMasuk = keuanganList
     .filter(k => k.tipe === 'Masuk')
@@ -876,6 +1579,25 @@ export default function Penatausahaan({
     .reduce((sum, curr) => sum + curr.jumlah, 0);
 
   const saldoKas = totalMasuk - totalKeluar;
+
+  // Kode Rekening Metrics
+  const krTotalPagu = kodeRekeningList.reduce((sum, kr) => sum + kr.pagu, 0);
+  const krTotalRealisasi = kodeRekeningList.reduce((sum, kr) => sum + kr.realisasi, 0);
+  const krSisaAnggaran = krTotalPagu - krTotalRealisasi;
+  const krPersenRealisasi = krTotalPagu > 0 ? (krTotalRealisasi / krTotalPagu) * 100 : 0;
+
+  // SPJ Rutin Metrics
+  const spjTotalPengajuan = spjRutinList.reduce((sum, spj) => sum + spj.jumlah, 0);
+  const spjTotalDisetujui = spjRutinList.filter(spj => spj.status === 'Disetujui').reduce((sum, spj) => sum + spj.jumlah, 0);
+  const spjCountDiajukan = spjRutinList.filter(spj => spj.status === 'Diajukan').length;
+  const spjCountDisetujui = spjRutinList.filter(spj => spj.status === 'Disetujui').length;
+  const spjCountDraftOrDitolak = spjRutinList.filter(spj => spj.status === 'Draft' || spj.status === 'Ditolak').length;
+
+  // BAPP Metrics
+  const bappTotalKontrak = bappList.reduce((sum, bp) => sum + bp.nilaiKontrak, 0);
+  const bappTotalBayar = bappList.reduce((sum, bp) => sum + bp.realisasiPembayaran, 0);
+  const bappSisaKontrak = bappTotalKontrak - bappTotalBayar;
+  const bappRataFisik = bappList.length > 0 ? bappList.reduce((sum, bp) => sum + bp.progresFisik, 0) / bappList.length : 0;
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -902,141 +1624,65 @@ export default function Penatausahaan({
       {/* ----------------- 0. MAIN DASHBOARD OVERVIEW ----------------- */}
       {activeSubTab === 'overview' && (
         <div className="space-y-6">
-          {/* Summary Indicator Banner */}
-          <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl border border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Dashboard Penatausahaan</p>
-              <h2 className="text-lg font-black tracking-tight mt-0.5">Ringkasan Tata Kelola & Administrasi</h2>
-              <p className="text-xs text-slate-400 mt-1 max-w-xl">
-                Rekapitulasi data kepegawaian, surat dinas masuk/keluar, logistika aset operasional, serta realisasi pembukuan anggaran internal.
-              </p>
-            </div>
-            <div className="bg-blue-950/80 px-4 py-2.5 rounded-xl border border-blue-800/45 text-right font-mono self-stretch sm:self-center flex flex-col justify-center">
-              <span className="text-[9px] text-blue-300 uppercase font-black tracking-widest block">Update Terakhir</span>
-              <span className="text-xs font-bold text-white mt-0.5">Hari Ini, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-            </div>
-          </div>
-
           {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
-              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+            <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/30 p-4.5 rounded-2xl border border-blue-100/75 shadow-2xs flex items-center gap-3.5 hover:shadow-xs transition-shadow duration-300">
+              <div className="p-2.5 bg-blue-100/90 text-blue-700 rounded-xl shadow-3xs">
                 <Users className="w-5.5 h-5.5" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pegawai</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-blue-600/80">Total Pegawai</p>
                 <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{personelList.length} Personel</h3>
-                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                <p className="text-[9.5px] text-slate-500 mt-0.5 font-medium">
                   {personelList.filter(p => p.statusKepegawaian === 'PNS').length} PNS &bull; {personelList.filter(p => p.statusKepegawaian === 'PPPK').length} PPPK
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
-              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/30 p-4.5 rounded-2xl border border-emerald-100/75 shadow-2xs flex items-center gap-3.5 hover:shadow-xs transition-shadow duration-300">
+              <div className="p-2.5 bg-emerald-100/90 text-emerald-700 rounded-xl shadow-3xs">
                 <Mail className="w-5.5 h-5.5" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Arsip Surat</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-emerald-600/80">Arsip Surat</p>
                 <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{suratList.length} Berkas</h3>
-                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                <p className="text-[9.5px] text-slate-500 mt-0.5 font-medium">
                   {suratList.filter(s => s.tipe === 'Masuk').length} Masuk &bull; {suratList.filter(s => s.tipe === 'Keluar').length} Keluar
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
-              <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl">
+            <div className="bg-gradient-to-br from-purple-50/70 to-fuchsia-50/30 p-4.5 rounded-2xl border border-purple-100/75 shadow-2xs flex items-center gap-3.5 hover:shadow-xs transition-shadow duration-300">
+              <div className="p-2.5 bg-purple-100/90 text-purple-700 rounded-xl shadow-3xs">
                 <Database className="w-5.5 h-5.5" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Inventaris Aset</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-purple-600/80">Inventaris Aset</p>
                 <h3 className="text-base font-extrabold text-slate-800 mt-0.5">
                   {inventarisList.reduce((sum, item) => sum + item.jumlah, 0)} Unit
                 </h3>
-                <p className="text-[9.5px] text-slate-400 mt-0.5">
+                <p className="text-[9.5px] text-slate-500 mt-0.5 font-medium">
                   {inventarisList.filter(item => item.kondisi === 'Baik').length} Kondisi Baik
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center gap-3.5">
-              <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+            <div className="bg-gradient-to-br from-amber-50/70 to-orange-50/30 p-4.5 rounded-2xl border border-amber-100/75 shadow-2xs flex items-center gap-3.5 hover:shadow-xs transition-shadow duration-300">
+              <div className="p-2.5 bg-amber-100/90 text-amber-750 rounded-xl shadow-3xs">
                 <DollarSign className="w-5.5 h-5.5" />
               </div>
               <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Kas Internal</p>
+                <p className="text-[9px] uppercase font-black tracking-wider text-amber-700/80">Kas Internal</p>
                 <h3 className="text-base font-extrabold text-slate-800 mt-0.5">{formatRupiah(saldoKas)}</h3>
-                <p className="text-[9.5px] text-slate-400 mt-0.5 font-mono">
+                <p className="text-[9.5px] text-slate-500 mt-0.5 font-mono font-bold">
                   Sisa Saldo Anggaran
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 4 Kolom Grafik / Chart Pegawai */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 w-full">
-            {/* 1. Golongan / Pangkat Chart */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
-              <div>
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-50">
-                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-800">Pangkat & Golongan</h3>
-                    <p className="text-[10px] text-slate-400">Distribusi kepangkatan pegawai</p>
-                  </div>
-                </div>
-
-                {golonganCounts.length > 0 ? (
-                  <div className="h-44 flex items-end justify-between gap-1.5 pt-6 pb-2 border-b border-dashed border-slate-100">
-                    {golonganCounts.slice(0, 7).map((item) => {
-                      const percentage = Math.round((item.count / personelList.length) * 100);
-                      const heightPercent = `${(item.count / maxGolonganCount) * 100}%`;
-                      let barColor = 'bg-blue-500 hover:bg-blue-600';
-                      if (item.rank >= 14) barColor = 'bg-indigo-500 hover:bg-indigo-600';
-                      else if (item.rank >= 10) barColor = 'bg-emerald-500 hover:bg-emerald-600';
-                      else if (item.rank >= 6) barColor = 'bg-purple-500 hover:bg-purple-600';
-                      else if (item.rank >= 2) barColor = 'bg-amber-500 hover:bg-amber-600';
-                      else barColor = 'bg-slate-400 hover:bg-slate-500';
-
-                      return (
-                        <div key={item.name} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full mb-1.5 bg-slate-800 text-white text-[9px] px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-center whitespace-nowrap shadow-md">
-                            <span className="font-extrabold block">{item.name}</span>
-                            <span>{item.count} Org ({percentage}%)</span>
-                          </div>
-                          {/* Column Bar Area */}
-                          <div className="w-full max-w-[24px] sm:max-w-[28px] bg-slate-50/50 hover:bg-slate-50 rounded-t-lg transition-colors flex items-end h-[115px] p-0.5">
-                            <div 
-                              className={`w-full ${barColor} rounded-t-md transition-all duration-500 cursor-pointer relative flex justify-center`}
-                              style={{ height: heightPercent || '4%' }}
-                            >
-                              <span className="absolute -top-5 text-center text-[10px] font-extrabold text-slate-700">
-                                {item.count}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Label below */}
-                          <span className="text-[9px] font-black text-slate-500 mt-1 truncate max-w-full text-center" title={item.name}>
-                            {item.name}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="py-8 text-center text-slate-400 text-xs">
-                    Belum ada data golongan.
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-50 text-[9.5px] text-slate-400">
-                Total Kategori: <span className="font-extrabold text-slate-600">{golonganCounts.length} Kategori</span>
-              </div>
-            </div>
+          {/* 3 Kolom Grafik / Chart Pegawai */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 w-full">
 
             {/* 2. Jenis Kelamin Chart */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between h-full">
@@ -1851,8 +2497,47 @@ export default function Penatausahaan({
       {/* ----------------- 3. VIEW ASET & INVENTARIS ----------------- */}
       {activeSubTab === 'aset' && (
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+          
+          {/* THREE MAIN SISTER SUB-TABS */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-1.5 flex flex-wrap gap-1 shadow-xs font-sans">
+            <button
+              onClick={() => setAsetSubTab('daftar')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
+                asetSubTab === 'daftar'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Daftar Aset (KIB A s/d F)</span>
+            </button>
+            <button
+              onClick={() => setAsetSubTab('distribusi')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
+                asetSubTab === 'distribusi'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Data Distribusi Aset</span>
+            </button>
+            <button
+              onClick={() => setAsetSubTab('stok')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
+                asetSubTab === 'stok'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Data Stok Barang Pakai Habis</span>
+            </button>
+          </div>
+
+          {/* SHARED SEARCH & ACTION RECTANGLE */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4 font-sans">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1 items-stretch sm:items-center">
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Search className="w-4 h-4" />
@@ -1860,39 +2545,90 @@ export default function Penatausahaan({
                 <input
                   type="text"
                   id="aset-search"
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-750"
-                  placeholder="Cari nama aset, kode inventaris, atau lokasi..."
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755"
+                  placeholder={
+                    asetSubTab === 'daftar' 
+                      ? "Cari nama aset, kode inventaris, atau lokasi..." 
+                      : asetSubTab === 'distribusi'
+                      ? "Cari penerima, nama aset, atau keterangan..."
+                      : "Cari nama barang pakai habis, gudang..."
+                  }
                   value={asetSearch}
                   onChange={(e) => setAsetSearch(e.target.value)}
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  id="aset-filter-kondisi"
-                  className="border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
-                  value={asetFilterKondisi}
-                  onChange={(e: any) => setAsetFilterKondisi(e.target.value)}
+              {asetSubTab === 'daftar' && (
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                  <select
+                    id="aset-filter-kondisi"
+                    className="border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
+                    value={asetFilterKondisi}
+                    onChange={(e: any) => setAsetFilterKondisi(e.target.value)}
+                  >
+                    <option value="Semua">Semua Kondisi</option>
+                    <option value="Baik">Fisik Baik</option>
+                    <option value="Rusak Ringan">Rusak Ringan</option>
+                    <option value="Rusak Berat">Rusak Berat</option>
+                  </select>
+                </div>
+              )}
+
+              {asetSubTab === 'distribusi' && isEditable && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingDistId(null);
+                    setNewDistAsetId('');
+                    setNewDistPenerima('');
+                    setNewDistJumlah(1);
+                    setNewDistTanggal(new Date().toISOString().split('T')[0]);
+                    setNewDistKeterangan('');
+                    setNewDistStatus('Aktif');
+                    setIsDistribusiModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition duration-250 shrink-0"
                 >
-                  <option value="Semua">Semua Kondisi</option>
-                  <option value="Baik">Fisik Baik</option>
-                  <option value="Rusak Ringan">Rusak Ringan</option>
-                  <option value="Rusak Berat">Rusak Berat</option>
-                </select>
-              </div>
+                  <Plus className="w-4 h-4" />
+                  <span>Registrasi Distribusi</span>
+                </button>
+              )}
+
+              {asetSubTab === 'stok' && isEditable && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingStokId(null);
+                    setNewStokNama('');
+                    setNewStokKategori('ATK');
+                    setNewStokJumlah(10);
+                    setNewStokSatuan('Pcs');
+                    setNewStokMinimum(5);
+                    setNewStokGudang('');
+                    setIsStokModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition duration-250 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Registrasi Stok Baru</span>
+                </button>
+              )}
             </div>
 
             {isEditable ? (
-              <button
-                type="button"
-                id="btn-add-aset"
-                onClick={handleAddAsetTrigger}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Pencatatan Aset Baru</span>
-              </button>
+              <div className="flex justify-end">
+                {asetSubTab === 'daftar' && (
+                  <button
+                    type="button"
+                    onClick={handleAddAsetTrigger}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Pencatatan Aset Baru</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-xl text-[10px] text-amber-800 border border-amber-100">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
@@ -1901,242 +2637,1180 @@ export default function Penatausahaan({
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                    <th className="p-3 pl-6">Kode Seri Aset</th>
-                    <th className="p-3">Nama Inventaris</th>
-                    <th className="p-3">Kelompok / Kategori</th>
-                    <th className="p-3">Jumlah Volume</th>
-                    <th className="p-3">Fisik Terakhir</th>
-                    <th className="p-3">Gudang Penyimpanan</th>
-                    {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 text-xs">
-                  {filteredAset.length > 0 ? (
-                    filteredAset.map((aset) => (
-                      <tr key={aset.id} className="hover:bg-slate-50/40 transition">
-                        <td className="p-3 pl-6 font-mono font-bold text-slate-800 text-[10.5px]">
-                          {aset.kodeAset}
-                        </td>
-                        <td className="p-3 font-bold text-slate-700">{aset.namaAset}</td>
-                        <td className="p-3 text-slate-500 font-semibold">{aset.kategori}</td>
-                        <td className="p-3 font-extrabold text-slate-800">{aset.jumlah} Unit</td>
-                        <td className="p-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                            aset.kondisi === 'Baik'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                              : aset.kondisi === 'Rusak Ringan'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                              : 'bg-rose-50 text-rose-700 border border-rose-100'
-                          }`}>
-                            {aset.kondisi}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-600 font-semibold">{aset.lokasi}</td>
-                        {isEditable && (
-                          <td className="p-3 text-right pr-6 whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <button
-                                onClick={() => handleEditAsetClick(aset)}
-                                className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
-                                title="Edit Aset"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteAset(aset.id)}
-                                className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        )}
+          {/* VIEW TAB 1: DAFTAR ASET (KIB A S/D KIB F) */}
+          {asetSubTab === 'daftar' && (
+            <div className="space-y-4 font-sans">
+              
+              {/* KIB SUB-FILLING BAR */}
+              <div className="bg-slate-50 border border-slate-150 p-3 rounded-2xl flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mr-2">Pilah Klasifikasi KIB:</span>
+                {(['Semua', 'A', 'B', 'C', 'D', 'E', 'F'] as const).map((kib) => {
+                  const labelMap: Record<string, string> = {
+                    'Semua': 'Semua KIB',
+                    'A': 'KIB A: Tanah',
+                    'B': 'KIB B: Peralatan & Mesin',
+                    'C': 'KIB C: Gedung & Bangunan',
+                    'D': 'KIB D: Jalan & Irigasi',
+                    'E': 'KIB E: Aset Tetap Lainnya',
+                    'F': 'KIB F: Konstruksi'
+                  };
+                  return (
+                    <button
+                      key={kib}
+                      onClick={() => setKibFilter(kib)}
+                      className={`px-3 py-1 text-[10.5px] font-bold rounded-lg transition-all ${
+                        kibFilter === kib
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {labelMap[kib]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* STATS PREVIEWS GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-2xs">
+                  <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Unit Aset Terdaftar</p>
+                  <h4 className="text-base font-black text-slate-800 mt-1">
+                    {filteredAset.reduce((acc, curr) => acc + curr.jumlah, 0)} <span className="text-xs font-semibold text-slate-500">Unit</span>
+                  </h4>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-2xs">
+                  <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Fisik Kondisi Baik</p>
+                  <h4 className="text-base font-black text-emerald-600 mt-1">
+                    {filteredAset.filter(a => a.kondisi === 'Baik').reduce((acc, curr) => acc + curr.jumlah, 0)} <span className="text-xs font-semibold text-slate-500">Unit</span>
+                  </h4>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-2xs">
+                  <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Sedang Rusak / pengerjaan</p>
+                  <h4 className="text-base font-black text-rose-600 mt-1">
+                    {filteredAset.filter(a => a.kondisi !== 'Baik').reduce((acc, curr) => acc + curr.jumlah, 0)} <span className="text-xs font-semibold text-slate-500">Unit</span>
+                  </h4>
+                </div>
+              </div>
+
+              {/* CORE TABLE */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">KIB</th>
+                        <th className="p-3">Kode Registrasi</th>
+                        <th className="p-3">Nama Aset / Inventaris</th>
+                        <th className="p-3">Kategori</th>
+                        <th className="p-3">Volume</th>
+                        <th className="p-3">Fisik Terakhir</th>
+                        <th className="p-3">Lokasi Gudang</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
-                        <Database className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                        <p className="font-semibold text-slate-550">Tidak ada inventaris yang sesuai.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs">
+                      {filteredAset.length > 0 ? (
+                        filteredAset.map((aset) => (
+                          <tr key={aset.id} className="hover:bg-slate-50/40 transition">
+                            <td className="p-3 pl-6">
+                              <span className={`inline-flex items-center justify-center font-bold text-[10px] w-6 h-6 rounded-full ${
+                                aset.kib === 'A' ? 'bg-amber-100 text-amber-800' :
+                                aset.kib === 'B' ? 'bg-blue-100 text-blue-800' :
+                                aset.kib === 'C' ? 'bg-green-100 text-green-800' :
+                                aset.kib === 'D' ? 'bg-purple-100 text-purple-800' :
+                                aset.kib === 'E' ? 'bg-indigo-100 text-indigo-800' :
+                                'bg-rose-100 text-rose-800'
+                              }`}>
+                                {aset.kib || 'B'}
+                              </span>
+                            </td>
+                            <td className="p-3 font-mono font-bold text-slate-800 text-[10.5px]">
+                              {aset.kodeAset}
+                            </td>
+                            <td className="p-3 font-bold text-slate-700">{aset.namaAset}</td>
+                            <td className="p-3 text-slate-500 font-semibold">{aset.kategori}</td>
+                            <td className="p-3 font-extrabold text-slate-800">{aset.jumlah} Unit</td>
+                            <td className="p-3">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                aset.kondisi === 'Baik'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                  : aset.kondisi === 'Rusak Ringan'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              }`}>
+                                {aset.kondisi}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-600 font-semibold">{aset.lokasi}</td>
+                            {isEditable && (
+                              <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    onClick={() => handleEditAsetClick(aset)}
+                                    className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                    title="Edit Aset"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAset(aset.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                    title="Hapus Aset"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-slate-400">
+                            <Database className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold text-slate-550">Tidak ada inventaris yang sesuai KIB ini.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* INSTRUCTIONAL TIP BOX */}
+              <div className="bg-slate-50 border border-slate-150 p-4 rounded-2xl text-[11px] text-slate-500 space-y-1.5 shadow-2xs">
+                <p className="font-bold text-slate-800 text-xs">Petunjuk Pengisian Kartu Inventaris Barang (KIB):</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 mt-1">
+                  <div>• <strong>KIB A (Tanah)</strong>: Bidang tanah kantor, lokasi bendung, persawahan instansi.</div>
+                  <div>• <strong>KIB B (Peralatan & Mesin)</strong>: Alat ukur hidrologi, generator diesel, PC/Laptop kerja, kendaraan dinas.</div>
+                  <div>• <strong>KIB C (Gedung & Bangunan)</strong>: Gedung kantor utama UPTD, pos jaga pemantau, rumah dinas juru.</div>
+                  <div>• <strong>KIB D (Jalan, Irigasi & Jaringan)</strong>: Saluran air tanah, pintu air pembagi sekunder, jembatan bendung.</div>
+                  <div>• <strong>KIB E (Aset Tetap Lainnya)</strong>: Sertifikat hak milik tanah, brankas boks arsip, cetak biru rancang desain.</div>
+                  <div>• <strong>KIB F (Konstruksi Dalam Pengerjaan)</strong>: Rehabilitas tanggul darurat, proyek pintu air yang belum serah-terima.</div>
+                </div>
+              </div>
+
             </div>
-          </div>
+          )}
+
+          {/* VIEW TAB 2: DATA DISTRIBUSI ASET */}
+          {asetSubTab === 'distribusi' && (
+            <div className="space-y-4 font-sans">
+              
+              {/* STATS BANNER */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs flex items-center gap-3">
+                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <Share2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] text-slate-450 font-black uppercase tracking-wider">Aset Aktif Didistribusikan</h5>
+                    <p className="text-sm font-black text-slate-800 mt-0.5">{filteredDistribusi.filter(d => d.status === 'Aktif').length} Lokasi Penempatan</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs flex items-center gap-3">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] text-slate-450 font-black uppercase tracking-wider">Total Volume Unit di Luar</h5>
+                    <p className="text-sm font-black text-emerald-700 mt-0.5">{filteredDistribusi.reduce((acc, curr) => acc + curr.jumlah, 0)} Unit Terdistribusi</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* DATA TABLE */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">Nama Aset / Inventaris</th>
+                        <th className="p-3">Penanggungjawab / Penerima</th>
+                        <th className="p-3">Volume</th>
+                        <th className="p-3">Tanggal Diserahkan</th>
+                        <th className="p-3">Keterangan Keperluan</th>
+                        <th className="p-3">Status Distribusi</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs">
+                      {filteredDistribusi.length > 0 ? (
+                        filteredDistribusi.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50/40 transition">
+                            <td className="p-3 pl-6 font-bold text-slate-750">
+                              {item.namaAset}
+                            </td>
+                            <td className="p-3 font-semibold text-slate-700">{item.penerima}</td>
+                            <td className="p-3 font-bold text-slate-800">{item.jumlah} Unit</td>
+                            <td className="p-3 font-mono font-semibold text-slate-500">{item.tanggalDistribusi}</td>
+                            <td className="p-3 text-slate-500 max-w-xs truncate" title={item.keterangan}>
+                              {item.keterangan || '-'}
+                            </td>
+                            <td className="p-3">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                item.status === 'Aktif'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                  : item.status === 'Dikembalikan'
+                                  ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              }`}>
+                                {item.status}
+                              </span>
+                            </td>
+                            {isEditable && (
+                              <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    onClick={() => handleEditDistClick(item)}
+                                    className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                    title="Edit Distribusi"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteDist(item.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                    title="Hapus Catatan"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-400">
+                            <Share2 className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold text-slate-550">Belum ada catatan penyaluran distribusi.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* VIEW TAB 3: DATA STOK BARANG PAKAI HABIS */}
+          {asetSubTab === 'stok' && (
+            <div className="space-y-4 font-sans">
+              
+              {/* WARNING BOX FOR LOW STOCK */}
+              {stokHabisList.some(s => s.stok <= s.stokMinimum) && (
+                <div className="bg-rose-50 border border-rose-150 p-3.5 rounded-2xl flex items-start gap-2.5 shadow-2xs">
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5 animate-pulse" />
+                  <div>
+                    <h4 className="text-xs font-black text-rose-800">Alarm Logistik: Beberapa barang pakai habis hampir habis!</h4>
+                    <p className="text-[10px] text-rose-600 mt-0.5">Segera hubungi sirkulasi atau lakukan pengadaan ATK / logistik agar operasional unit tetap berjalan optimal.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* STATS BANNER */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs flex items-center gap-3">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <Boxes className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] text-slate-450 font-black uppercase tracking-wider">Total Item Logistik</h5>
+                    <p className="text-sm font-black text-slate-800 mt-0.5">{filteredStokHabis.length} Jenis Barang Habis Pakai</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-2xs flex items-center gap-3 bg-gradient-to-r from-red-50/10 to-transparent">
+                  <div className="p-2 bg-red-100 text-red-750 rounded-lg">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-[10px] text-slate-450 font-black uppercase tracking-wider">Perlu Re-Stock Segera</h5>
+                    <p className="text-sm font-black text-red-750 mt-0.5">
+                      {filteredStokHabis.filter(s => s.stok <= s.stokMinimum).length} Barang di Bawah Ambang Batas
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* STOK TABLE */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">Nama Logistik / Barang</th>
+                        <th className="p-3">Golongan Kategori</th>
+                        <th className="p-3">Sisa Stok Volume</th>
+                        <th className="p-3">Ambang Batas</th>
+                        <th className="p-3">Status Ketersediaan</th>
+                        <th className="p-3">Lokasi Gudang</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs">
+                      {filteredStokHabis.length > 0 ? (
+                        filteredStokHabis.map((item) => {
+                          const isKritis = item.stok <= item.stokMinimum;
+                          return (
+                            <tr key={item.id} className="hover:bg-slate-50/40 transition">
+                              <td className="p-3 pl-6 font-bold text-slate-755">
+                                {item.namaBarang}
+                              </td>
+                              <td className="p-3">
+                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-semibold">
+                                  {item.kategori}
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-800 font-extrabold text-xs">
+                                <span className={isKritis ? 'text-red-600' : 'text-slate-800'}>{item.stok}</span> <span className="text-[10px] font-semibold text-slate-500">{item.satuan}</span>
+                              </td>
+                              <td className="p-3 text-slate-500 font-medium">{item.stokMinimum} {item.satuan}</td>
+                              <td className="p-3">
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                  isKritis
+                                    ? 'bg-rose-100 text-rose-700 animate-pulse border border-rose-200'
+                                    : 'bg-emerald-100 text-emerald-850 border border-emerald-200'
+                                }`}>
+                                  {isKritis ? 'Stok Kritis' : 'Aman (Tersedia)'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-500 font-semibold">{item.lokasiGudang}</td>
+                              {isEditable && (
+                                <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                  <div className="flex justify-end gap-1">
+                                    <button
+                                      onClick={() => handleEditStokClick(item)}
+                                      className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                      title="Edit Logistik"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteStok(item.id)}
+                                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                      title="Hapus Barang"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-400">
+                            <Package className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold text-slate-550">Belum ada barang pakai habis yang sesuai.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
       )}
 
       {/* ----------------- 4. VIEW KEUANGAN (LEDGER) ----------------- */}
       {activeSubTab === 'keuangan' && (
-        <div className="space-y-4">
-          {/* Cash Ledger Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pemasukan (Kredit)</p>
-                <h3 className="text-sm font-extrabold text-emerald-700 mt-0.5">{formatRupiah(totalMasuk)}</h3>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
-              <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg">
-                <TrendingDown className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Belanja (Debit)</p>
-                <h3 className="text-sm font-extrabold text-rose-700 mt-0.5">{formatRupiah(totalKeluar)}</h3>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-lg ring-1 ring-blue-500/10 flex items-center gap-3 bg-gradient-to-r from-blue-50/15 to-white">
-              <div className="p-2.5 bg-blue-100 text-blue-700 rounded-lg shadow-2xs">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase font-black tracking-wider text-slate-500">Sisa Saldo Kas Sekarang</p>
-                <h3 className="text-sm font-black text-blue-800 mt-0.5">{formatRupiah(saldoKas)}</h3>
-              </div>
-            </div>
+        <div className="space-y-4 font-sans">
+          {/* Sub Navigation Bar */}
+          <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap gap-1">
+            <button
+              onClick={() => setKeuanganSubTab('kode-rekening')}
+              className={`flex-1 min-w-[150px] py-2.5 px-4 text-xs font-bold rounded-xl transition duration-150 flex items-center justify-center gap-2 ${
+                keuanganSubTab === 'kode-rekening'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <span>Kode Rekening & Pagu</span>
+            </button>
+            <button
+              onClick={() => {
+                setKeuanganSubTab('spj-rutin');
+                setSpjViewMode('pengajuan');
+              }}
+              className={`flex-1 min-w-[150px] py-2.5 px-4 text-xs font-bold rounded-xl transition duration-150 flex items-center justify-center gap-2 ${
+                keuanganSubTab === 'spj-rutin'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>SPJ Rutin & Buku Kas</span>
+            </button>
+            <button
+              onClick={() => setKeuanganSubTab('bapp')}
+              className={`flex-1 min-w-[150px] py-2.5 px-4 text-xs font-bold rounded-xl transition duration-150 flex items-center justify-center gap-2 ${
+                keuanganSubTab === 'bapp'
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              <span>Berita Acara Pembayaran (BAPP)</span>
+            </button>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                  <Search className="w-4 h-4" />
-                </span>
-                <input
-                  type="text"
-                  id="keuangan-search"
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755"
-                  placeholder="Cari uraian transaksi, penanggung jawab, no bukti..."
-                  value={keuanganSearch}
-                  onChange={(e) => setKeuanganSearch(e.target.value)}
-                />
+          {/* =================================================================== */}
+          {/* ======================= TAB 2: KODE REKENING / PAGU =============== */}
+          {/* =================================================================== */}
+          {keuanganSubTab === 'kode-rekening' && (
+            <div className="space-y-4 animate-fade-in">
+              {/* Kode Rekening Summary Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pagu Anggaran</p>
+                    <h3 className="text-sm font-extrabold text-blue-800 mt-0.5 font-mono">{formatRupiah(krTotalPagu)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg">
+                    <TrendingDown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Realisasi</p>
+                    <h3 className="text-sm font-extrabold text-rose-700 mt-0.5 font-mono">{formatRupiah(krTotalRealisasi)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400 font-sans">Sisa Dana Alokasi</p>
+                    <h3 className="text-sm font-extrabold text-emerald-700 mt-0.5 font-mono">{formatRupiah(krSisaAnggaran)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-lg">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">% Realisasi Total</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-extrabold text-slate-700 font-mono">{krPersenRealisasi.toFixed(1)}%</span>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.min(krPersenRealisasi, 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  id="keuangan-filter-tipe"
-                  className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
-                  value={keuanganFilterTipe}
-                  onChange={(e: any) => setKeuanganFilterTipe(e.target.value)}
-                >
-                  <option value="Semua">Semua Arus</option>
-                  <option value="Masuk">Kas Masuk (Kredit)</option>
-                  <option value="Keluar">Kas Beluar (Debit)</option>
-                </select>
+              {/* Controls */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <Search className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="text"
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755"
+                    placeholder="Cari kode rekening, nama anggaran belanja, atau deskripsi..."
+                    value={krSearch}
+                    onChange={(e) => setKrSearch(e.target.value)}
+                  />
+                </div>
+
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={handleCreateKrTrigger}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Kode Rekening Baru</span>
+                  </button>
+                )}
               </div>
 
-              <select
-                id="keuangan-filter-kategori"
-                className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
-                value={keuanganFilterKategori}
-                onChange={(e: any) => setKeuanganFilterKategori(e.target.value)}
-              >
-                <option value="Semua">Semua Kategori</option>
-                <option value="Anggaran DIPA">Alokasi DIPA</option>
-                <option value="Belanja Operasional">Belanja Ops</option>
-                <option value="Pemeliharaan">Pemeliharaan</option>
-                <option value="Honorarium">Honor Pegawai</option>
-                <option value="Lain-lain">Lain-lain</option>
-              </select>
-            </div>
-
-            {isEditable && (
-              <button
-                type="button"
-                id="btn-add-keuangan"
-                onClick={handleAddKeuanganTrigger}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Catat Keuangan Baru</span>
-              </button>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                    <th className="p-3 pl-6">Nomor Bukti - Tanggal</th>
-                    <th className="p-3">Uraian Keterangan Transaksi</th>
-                    <th className="p-3">Kategori Rincian</th>
-                    <th className="p-3">Arus Kas</th>
-                    <th className="p-3">Jumlah (IDR)</th>
-                    <th className="p-3">Penanggung Jawab</th>
-                    {isEditable && <th className="p-3 text-right pr-6">Batalkan</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 text-xs">
-                  {filteredKeuangan.length > 0 ? (
-                    filteredKeuangan.map((k) => (
-                      <tr key={k.id} className="hover:bg-slate-50/40 transition">
-                        <td className="p-3 pl-6">
-                          <p className="font-extrabold text-slate-800">{k.nomorBukti}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{k.tanggal}</p>
-                        </td>
-                        <td className="p-3 font-semibold text-slate-700 truncate max-w-xs">{k.uraian}</td>
-                        <td className="p-3 text-slate-500 font-medium">{k.kategori}</td>
-                        <td className="p-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9.5px] font-extrabold rounded ${
-                            k.tipe === 'Masuk' 
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                              : 'bg-rose-50 text-rose-700 border border-rose-100'
-                          }`}>
-                            {k.tipe === 'Masuk' ? 'Uang Masuk' : 'Uang Keluar'}
-                          </span>
-                        </td>
-                        <td className={`p-3 font-extrabold ${k.tipe === 'Masuk' ? 'text-emerald-700' : 'text-slate-850'}`}>
-                          {k.tipe === 'Masuk' ? '+' : '-'} {formatRupiah(k.jumlah)}
-                        </td>
-                        <td className="p-3 text-slate-500 font-semibold">{k.penanggungJawab}</td>
-                        {isEditable && (
-                          <td className="p-3 text-right pr-6 whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <button
-                                onClick={() => handleEditKeuanganClick(k)}
-                                className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
-                                title="Edit Keuangan"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteKeuangan(k.id)}
-                                className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        )}
+              {/* Data Table */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">Kode Rekening</th>
+                        <th className="p-3">Program</th>
+                        <th className="p-3">Kegiatan</th>
+                        <th className="p-3">Sub Kegiatan Uraian</th>
+                        <th className="p-3 text-right">Pagu (IDR)</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
-                        <BookOpen className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                        <p className="font-semibold text-slate-550">Belum ada transaksi terdaftar.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
+                      {filteredKr.length > 0 ? (
+                        filteredKr.map((kr) => {
+                          return (
+                            <tr key={kr.id} className="hover:bg-slate-50/40 transition">
+                              <td className="p-3 pl-6 font-mono font-bold text-slate-800">{kr.kode}</td>
+                              <td className="p-3 font-medium text-slate-600 max-w-xs truncate" title={kr.program || '-'}>{kr.program || '-'}</td>
+                              <td className="p-3 font-medium text-slate-600 max-w-xs truncate" title={kr.kegiatan || '-'}>{kr.kegiatan || '-'}</td>
+                              <td className="p-2 font-bold text-slate-900 max-w-md">
+                                <div className="space-y-0.5">
+                                  <p className="text-slate-850 font-extrabold text-xs">{kr.subKegiatan || '-'}</p>
+                                  <p className="text-[10px] text-slate-400 font-medium italic">{kr.nama}</p>
+                                </div>
+                              </td>
+                              <td className="p-3 text-right font-mono font-black text-slate-800">{formatRupiah(kr.pagu)}</td>
+                              {isEditable && (
+                                <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                  <div className="flex justify-end gap-1">
+                                    <button
+                                      onClick={() => handleEditKrClick(kr)}
+                                      className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                      title="Edit Kode Rekening"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteKodeRekening(kr.id)}
+                                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                      title="Hapus"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={isEditable ? 6 : 5} className="p-8 text-center text-slate-400">
+                            <Database className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold">Belum ada kode rekening terdaftar dengan filter ini.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* =================================================================== */}
+          {/* ======================= TAB 3: SPJ RUTIN & BUKU KAS ========================== */}
+          {/* =================================================================== */}
+          {keuanganSubTab === 'spj-rutin' && (
+            <div className="space-y-4 animate-fade-in">
+              {/* Inner Sub tabs: Pengajuan SPJ vs Buku Kas Umum */}
+              <div className="flex border-b border-slate-100 bg-slate-150 p-1.5 rounded-xl w-fit gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSpjViewMode('pengajuan')}
+                  className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-2 ${
+                    spjViewMode === 'pengajuan'
+                      ? 'bg-white text-slate-800 shadow-xs border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-650" />
+                  <span>Pengajuan SPJ Rutin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpjViewMode('buku-kas')}
+                  className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-2 ${
+                    spjViewMode === 'buku-kas'
+                      ? 'bg-white text-slate-800 shadow-xs border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 text-blue-650" />
+                  <span>Buku Kas Umum (Ledger)</span>
+                </button>
+              </div>
+
+              {spjViewMode === 'pengajuan' ? (
+                <>
+                  {/* SPJ Rutin Metrics */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                    <FileSpreadsheet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pengajuan SPJ</p>
+                    <h3 className="text-sm font-extrabold text-blue-800 mt-0.5 font-mono">{formatRupiah(spjTotalPengajuan)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total SPJ Disetujui</p>
+                    <h3 className="text-sm font-extrabold text-emerald-750 mt-0.5 font-mono">{formatRupiah(spjTotalDisetujui)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">SPJ Diajukan / Pendding</p>
+                    <h3 className="text-sm font-extrabold text-amber-700 mt-0.5">{spjCountDiajukan} berkas</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-slate-100 text-slate-500 rounded-lg">
+                    <FolderMinus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Draft / Ditolak</p>
+                    <h3 className="text-sm font-extrabold text-slate-700 mt-0.5">{spjCountDraftOrDitolak} berkas</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                  <div className="relative flex-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Search className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755"
+                      placeholder="Cari nomor SPJ, uraian kegiatan, berkas, atau keterangan..."
+                      value={spjSearch}
+                      onChange={(e) => setSpjSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                      className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
+                      value={spjFilterStatus}
+                      onChange={(e: any) => setSpjFilterStatus(e.target.value)}
+                    >
+                      <option value="Semua">Semua Status</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Diajukan font-sans">Diajukan</option>
+                      <option value="Disetujui">Disetujui</option>
+                      <option value="Ditolak">Ditolak</option>
+                    </select>
+                  </div>
+                </div>
+
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={handleCreateSpjTrigger}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Ajukan SPJ Rutin</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Data Table */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">No. SPJ / Tanggal</th>
+                        <th className="p-3">Pos Rekening Belanja</th>
+                        <th className="p-3">Nama Kegiatan Belanja</th>
+                        <th className="p-3 text-right">Nominal SPJ (IDR)</th>
+                        <th className="p-3">Kuitansi / Bukti Berkas</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Keterangan Administrasi</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
+                      {filteredSpj.length > 0 ? (
+                        filteredSpj.map((spj) => {
+                          const refCode = kodeRekeningList.find(kr => kr.id === spj.kodeRekeningId);
+                          return (
+                            <tr key={spj.id} className="hover:bg-slate-50/40 transition">
+                              <td className="p-3 pl-6 whitespace-nowrap">
+                                <p className="font-extrabold text-slate-800">{spj.nomorSpj}</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{spj.tanggal}</p>
+                              </td>
+                              <td className="p-3">
+                                {refCode ? (
+                                  <div>
+                                    <p className="font-mono font-bold text-slate-850 text-[11px]">{refCode.kode}</p>
+                                    <p className="text-[10px] text-slate-500 font-medium truncate max-w-[150px]">{refCode.nama}</p>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 italic">Kode tidak valid</span>
+                                )}
+                              </td>
+                              <td className="p-3 font-semibold text-slate-700 max-w-xs">{spj.namaKegiatan}</td>
+                              <td className="p-3 text-right font-mono font-extrabold text-slate-850">{formatRupiah(spj.jumlah)}</td>
+                              <td className="p-3">
+                                {spj.berkasUrlList && spj.berkasUrlList.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {spj.berkasUrlList.map((url, i) => (
+                                      <a
+                                        key={i}
+                                        href={url}
+                                        download={`Lampiran_SPJ_${spj.nomorSpj.replace(/\//g, '_')}_${i+1}`}
+                                        className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-bold transition border border-slate-200"
+                                      >
+                                        <Paperclip className="w-2.5 h-2.5 text-slate-400" />
+                                        <span>Dok-{i+1}</span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[11px]">Tidak ada berkert</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-bold rounded-full ${
+                                  spj.status === 'Disetujui'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                    : spj.status === 'Diajukan font-sans' || spj.status === 'Diajukan'
+                                    ? 'bg-amber-50 text-amber-750 border border-amber-200'
+                                    : spj.status === 'Ditolak'
+                                    ? 'bg-rose-50 text-rose-700 border border-rose-150'
+                                    : 'bg-slate-50 text-slate-600 border border-slate-200'
+                                }`}>
+                                  {spj.status}
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-450 text-[11px] max-w-xs truncate" title={spj.keterangan}>{spj.keterangan || '-'}</td>
+                              {isEditable && (
+                                <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                  <div className="flex justify-end gap-1">
+                                    <button
+                                      onClick={() => handleEditSpjClick(spj)}
+                                      className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                      title="Edit SPJ"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteSpjRutin(spj.id)}
+                                      className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                      title="Hapus"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-slate-400">
+                            <FileSpreadsheet className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold">Belum ada pengajuan SPJ Rutin terdaftar.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4 animate-fade-in">
+              {/* Cash Ledger Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Pemasukan (Kredit)</p>
+                    <h3 className="text-sm font-extrabold text-emerald-700 mt-0.5">{formatRupiah(totalMasuk)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg">
+                    <TrendingDown className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Total Belanja (Debit)</p>
+                    <h3 className="text-sm font-extrabold text-rose-700 mt-0.5">{formatRupiah(totalKeluar)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-lg ring-1 ring-blue-500/10 flex items-center gap-3 bg-gradient-to-r from-blue-50/15 to-white">
+                  <div className="p-2.5 bg-blue-100 text-blue-700 rounded-lg shadow-2xs">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-500">Sisa Saldo Kas Sekarang</p>
+                    <h3 className="text-sm font-black text-blue-800 mt-0.5">{formatRupiah(saldoKas)}</h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                  <div className="relative flex-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Search className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      id="keuangan-search"
+                      className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755 animate-fade-in"
+                      placeholder="Cari uraian transaksi, penanggung jawab, no bukti..."
+                      value={keuanganSearch}
+                      onChange={(e) => setKeuanganSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                      id="keuangan-filter-tipe"
+                      className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
+                      value={keuanganFilterTipe}
+                      onChange={(e: any) => setKeuanganFilterTipe(e.target.value)}
+                    >
+                      <option value="Semua">Semua Arus</option>
+                      <option value="Masuk">Kas Masuk (Kredit)</option>
+                      <option value="Keluar">Kas Belanja (Debit)</option>
+                    </select>
+                  </div>
+
+                  <select
+                    id="keuangan-filter-kategori"
+                    className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
+                    value={keuanganFilterKategori}
+                    onChange={(e: any) => setKeuanganFilterKategori(e.target.value)}
+                  >
+                    <option value="Semua">Semua Kategori</option>
+                    <option value="Anggaran DIPA">Alokasi DIPA</option>
+                    <option value="Belanja Operasional">Belanja Ops</option>
+                    <option value="Pemeliharaan">Pemeliharaan</option>
+                    <option value="Honorarium">Honor Pegawai</option>
+                    <option value="Lain-lain">Lain-lain</option>
+                  </select>
+                </div>
+
+                {isEditable && (
+                  <button
+                    type="button"
+                    id="btn-add-keuangan"
+                    onClick={handleAddKeuanganTrigger}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Catat Keuangan Baru</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Data Table */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">Nomor Bukti - Tanggal</th>
+                        <th className="p-3">Uraian Keterangan Transaksi</th>
+                        <th className="p-3">Kategori Rincian</th>
+                        <th className="p-3">Arus Kas</th>
+                        <th className="p-3">Jumlah (IDR)</th>
+                        <th className="p-3">Penanggung Jawab</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
+                      {filteredKeuangan.length > 0 ? (
+                        filteredKeuangan.map((k) => (
+                          <tr key={k.id} className="hover:bg-slate-50/40 transition">
+                            <td className="p-3 pl-6">
+                              <p className="font-extrabold text-slate-800">{k.nomorBukti}</p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">{k.tanggal}</p>
+                            </td>
+                            <td className="p-3 font-semibold text-slate-700 truncate max-w-xs">{k.uraian}</td>
+                            <td className="p-3 text-slate-500 font-medium">{k.kategori}</td>
+                            <td className="p-3">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9.5px] font-extrabold rounded ${
+                                k.tipe === 'Masuk' 
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                                  : 'bg-rose-50 text-rose-700 border border-rose-100'
+                              }`}>
+                                {k.tipe === 'Masuk' ? 'Uang Masuk' : 'Uang Keluar'}
+                              </span>
+                            </td>
+                            <td className={`p-3 font-extrabold ${k.tipe === 'Masuk' ? 'text-emerald-700' : 'text-slate-850'} font-mono`}>
+                              {k.tipe === 'Masuk' ? '+' : '-'} {formatRupiah(k.jumlah)}
+                            </td>
+                            <td className="p-3 text-slate-500 font-semibold">{k.penanggungJawab}</td>
+                            {isEditable && (
+                              <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    onClick={() => handleEditKeuanganClick(k)}
+                                    className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                    title="Edit Keuangan"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteKeuangan(k.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                    title="Hapus"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-400">
+                            <BookOpen className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold text-slate-550">Belum ada transaksi terdaftar.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+          {/* =================================================================== */}
+          {/* ======================= TAB 4: BAPP =============================== */}
+          {/* =================================================================== */}
+          {keuanganSubTab === 'bapp' && (
+            <div className="space-y-4 animate-fade-in">
+              {/* BAPP Summary Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 col-span-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg animate-pulse-slow">
+                    <FileText className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Daftar Nilai Kontrak BAPP</p>
+                    <h3 className="text-sm font-extrabold text-indigo-850 mt-0.5 font-mono">{formatRupiah(bappTotalKontrak)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Realisasi Pembayaran</p>
+                    <h3 className="text-sm font-extrabold text-emerald-700 mt-0.5 font-mono">{formatRupiah(bappTotalBayar)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-500 font-sans">Sisa Unpaid Kontrak</p>
+                    <h3 className="text-sm font-extrabold text-amber-850 mt-0.5 font-mono">{formatRupiah(bappSisaKontrak)}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-150/60 shadow-2xs flex items-center gap-3">
+                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-lg">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[9px] uppercase font-black tracking-wider text-slate-400">Rata Fisik Konstruksi</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-extrabold text-slate-700 font-mono">{bappRataFisik.toFixed(1)}%</span>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2">
+                        <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${Math.min(bappRataFisik, 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                  <div className="relative flex-1">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                      <Search className="w-4 h-4" />
+                    </span>
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs text-slate-755"
+                      placeholder="Cari konstruksi, PT/CV penyedia jasa, nomor SPK, lokasi..."
+                      value={bappSearch}
+                      onChange={(e) => setBappSearch(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                    <select
+                      className="border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:ring-2 focus:ring-blue-500/20 text-slate-600 bg-white"
+                      value={bappFilterStatus}
+                      onChange={(e: any) => setBappFilterStatus(e.target.value)}
+                    >
+                      <option value="Semua">Semua Status</option>
+                      <option value="Dalam Proses">Dalam Proses</option>
+                      <option value="Selesai">Selesai (PHO/Serah Terima)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {isEditable && (
+                  <button
+                    type="button"
+                    onClick={handleCreateBappTrigger}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition shrink-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Buat Berita Acara BAPP</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Data Table */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-fade-in">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                        <th className="p-3 pl-6">No. BAPP / SPK</th>
+                        <th className="p-3">Nama Pekerjaan Irigasi / Konstruksi</th>
+                        <th className="p-3">Penyedia Jasa (Rekanan)</th>
+                        <th className="p-3 text-right">Nilai Kontrak SPK</th>
+                        <th className="p-3 text-center">Progres Fisik</th>
+                        <th className="p-3 text-right">Realisasi Bayar (IDR)</th>
+                        <th className="p-3">Foto Bukti Lapangan</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Keterangan Tambahan</th>
+                        {isEditable && <th className="p-3 text-right pr-6">Aksi</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-xs text-slate-700">
+                      {filteredBapp.length > 0 ? (
+                        filteredBapp.map((bp) => (
+                          <tr key={bp.id} className="hover:bg-slate-50/40 transition">
+                            <td className="p-3 pl-6">
+                              <p className="font-extrabold text-slate-800 text-[11px]">{bp.nomorBapp}</p>
+                              <p className="text-[10px] text-slate-400 font-semibold mt-0.5 whitespace-nowrap">SPK: {bp.nomorSpk}</p>
+                              <p className="text-[9px] text-slate-400 font-mono mt-0.5">Tgl: {bp.tanggal}</p>
+                            </td>
+                            <td className="p-3 font-semibold text-slate-700 max-w-xs">{bp.namaPekerjaan}</td>
+                            <td className="p-3 font-semibold text-indigo-700">{bp.namaPenyedia}</td>
+                            <td className="p-3 text-right font-mono font-bold text-slate-850">{formatRupiah(bp.nilaiKontrak)}</td>
+                            <td className="p-3">
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                <span className="font-mono font-bold text-slate-600">{bp.progresFisik}%</span>
+                                <div className="w-20 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-1.5 rounded-full ${bp.progresFisik === 100 ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse-slow'}`}
+                                    style={{ width: `${bp.progresFisik}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3 text-right font-mono font-bold text-slate-800">{formatRupiah(bp.realisasiPembayaran)}</td>
+                            <td className="p-3">
+                              {bp.fotoList && bp.fotoList.length > 0 ? (
+                                <div className="flex gap-1 overflow-x-auto max-w-[124px] py-1">
+                                  {bp.fotoList.map((pic, idx) => (
+                                    <div key={idx} className="relative group shrink-0">
+                                      <img 
+                                        src={pic} 
+                                        alt="Realisasi BAPP" 
+                                        className="w-8 h-8 rounded-md border border-slate-200 object-cover hover:scale-125 hover:z-20 transition"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Belum ada foto</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[9.5px] font-bold rounded-full ${
+                                bp.status === 'Selesai'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                  : 'bg-indigo-50 text-indigo-700 border border-indigo-150'
+                              }`}>
+                                {bp.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-500 italic text-[11px] max-w-xs truncate" title={bp.keterangan || '-'}>{bp.keterangan || '-'}</td>
+                            {isEditable && (
+                              <td className="p-3 text-right pr-6 whitespace-nowrap">
+                                <div className="flex justify-end gap-1">
+                                  <button
+                                    onClick={() => handleEditBappClick(bp)}
+                                    className="p-1 text-slate-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition"
+                                    title="Edit BAPP"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteBapp(bp.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition"
+                                    title="Hapus"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={10} className="p-8 text-center text-slate-400">
+                            <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                            <p className="font-semibold">Belum ada Berita Acara Pembayaran (BAPP) terdaftar.</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3409,6 +5083,23 @@ export default function Penatausahaan({
               </div>
 
               <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Klasifikasi Kartu Inventaris Barang (KIB)</label>
+                <select
+                  required
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newAsetKib}
+                  onChange={(e: any) => setNewAsetKib(e.target.value)}
+                >
+                  <option value="A">KIB A - Tanah</option>
+                  <option value="B">KIB B - Peralatan dan Mesin</option>
+                  <option value="C">KIB C - Gedung dan Bangunan</option>
+                  <option value="D">KIB D - Jalan, Irigasi dan Jaringan</option>
+                  <option value="E">KIB E - Aset Tetap Lainnya</option>
+                  <option value="F">KIB F - Konstruksi Dalam Pengerjaan</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Barang / Aset</label>
                 <input
                   type="text"
@@ -3471,6 +5162,241 @@ export default function Penatausahaan({
                   className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
                 >
                   Simpan Aset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DATA DISTRIBUSI ASET MODAL */}
+      {isDistribusiModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div className="bg-slate-900 text-slate-100 p-4">
+              <h3 className="font-extrabold text-sm">{editingDistId ? 'Ubah Distribusi Aset' : 'Registrasi Distribusi Aset'}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Penugasan & peminjaman aset kantor kepada staf / divisi</p>
+            </div>
+
+            <form onSubmit={handleAddDistribusi} className="p-5 space-y-3.5">
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pilih Aset Yang Didistribusikan</label>
+                <select
+                  required
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
+                  value={newDistAsetId}
+                  onChange={(e) => setNewDistAsetId(e.target.value)}
+                >
+                  <option value="">-- Pilih dari Inventaris --</option>
+                  {inventarisList.map(a => {
+                    const isDistributedActive = distribusiList.some(
+                      d => d.asetId === a.id && d.status === 'Aktif'
+                    );
+                    const isDistributedBroken = distribusiList.some(
+                      d => d.asetId === a.id && d.status === 'Rusak'
+                    );
+                    const isPhysicalBroken = a.kondisi === 'Rusak Ringan' || a.kondisi === 'Rusak Berat';
+                    
+                    const isCurrentlyEditingThisAset = editingDistId ? (distribusiList.find(d => d.id === editingDistId)?.asetId === a.id) : false;
+                    const isBlocked = (isDistributedActive || isDistributedBroken || isPhysicalBroken) && !isCurrentlyEditingThisAset;
+                    
+                    let statusLabel = '';
+                    if (isBlocked) {
+                      if (isPhysicalBroken) statusLabel = ' (Fisik Rusak)';
+                      else if (isDistributedBroken) statusLabel = ' (Status Distribusi Rusak)';
+                      else if (isDistributedActive) statusLabel = ' (Sedang Aktif Digunakan)';
+                    }
+                    
+                    return (
+                      <option key={a.id} value={a.id} disabled={isBlocked}>
+                        {a.namaAset} ({a.kodeAset}) - Fisik: {a.kondisi}{statusLabel}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Penerima Alokasi / Penanggungjawab</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nama staf, jabatan, atau divisi (Contoh: Budi - O&M)"
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newDistPenerima}
+                  onChange={(e) => setNewDistPenerima(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah Didistribusikan</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newDistJumlah}
+                    onChange={(e) => setNewDistJumlah(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tanggal Serah Terima</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newDistTanggal}
+                    onChange={(e) => setNewDistTanggal(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Penggunaan</label>
+                  <select
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
+                    value={newDistStatus}
+                    onChange={(e: any) => setNewDistStatus(e.target.value)}
+                  >
+                    <option value="Aktif">Aktif (Sedang Digunakan)</option>
+                    <option value="Dikembalikan">Dikembalikan (Kembali ke Gudang)</option>
+                    <option value="Rusak">Rusak / Tidak Layak Pakai</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Keterangan Tambahan / Keperluan</label>
+                <textarea
+                  placeholder="Deskripsi peruntukan atau catatan serah terima..."
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none h-16 resize-none"
+                  value={newDistKeterangan}
+                  onChange={(e) => setNewDistKeterangan(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsDistribusiModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
+                >
+                  {editingDistId ? 'Ubah Distribusi' : 'Catat Distribusi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DATA STOK BARANG PAKAI HABIS MODAL */}
+      {isStokModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div className="bg-slate-900 text-slate-100 p-4">
+              <h3 className="font-extrabold text-sm">{editingStokId ? 'Ubah Barang Pakai Habis' : 'Registrasi Barang Pakai Habis'}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Input logistik perkantoran yang cepat habis (ATK, Konsumsi, dll.)</p>
+            </div>
+
+            <form onSubmit={handleAddStok} className="p-5 space-y-3.5">
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Barang / Logistik</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Kertas HVS A4 80gr Sinar Dunia"
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newStokNama}
+                  onChange={(e) => setNewStokNama(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Golongan Kategori</label>
+                  <select
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none bg-white"
+                    value={newStokKategori}
+                    onChange={(e: any) => setNewStokKategori(e.target.value)}
+                  >
+                    <option value="ATK">Alat Tulis Kantor (ATK)</option>
+                    <option value="Kebersihan">Kebersihan & Sanitasi</option>
+                    <option value="K3 / Keamanan">K3 / Keamanan Kerja</option>
+                    <option value="Konsumsi">Konsumsi Kantor / Diklat</option>
+                    <option value="Lainnya">Logistik Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Unit Satuan</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Rim, Botol, Pcs, Box"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newStokSatuan}
+                    onChange={(e) => setNewStokSatuan(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tingkat Stok Saat Ini</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newStokJumlah}
+                    onChange={(e) => setNewStokJumlah(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ambang Stok Minimum (Peringatan)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newStokMinimum}
+                    onChange={(e) => setNewStokMinimum(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Gudang / Lemari Penyimpanan</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Lemari ATK Samping Meja TU"
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newStokGudang}
+                  onChange={(e) => setNewStokGudang(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsStokModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
+                >
+                  {editingStokId ? 'Ubah Barang' : 'Simpan Barang'}
                 </button>
               </div>
             </form>
@@ -3590,6 +5516,510 @@ export default function Penatausahaan({
                   className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
                 >
                   Bukukan Transaksi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* KODE REKENING MODAL */}
+      {isKrModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div className="bg-slate-900 text-slate-100 p-4">
+              <h3 className="font-extrabold text-sm">{editingKrId ? 'Ubah Kode Rekening' : 'Tambah Kode Rekening Baru'}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Kelola pos kode rekening anggaran belanja kantor DIPA</p>
+            </div>
+
+            <form onSubmit={handleSaveKodeRekening} className="p-5 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Kode Rekening</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 5.2.02.01.01"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-mono"
+                    value={newKrKode}
+                    onChange={(e) => setNewKrKode(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Rekening / Detail</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Belanja Bahan / ATK"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newKrNama}
+                    onChange={(e) => setNewKrNama(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Program</label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Program Penunjang Urusan Pemerintahan Daerah Provinsi"
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newKrProgram}
+                  onChange={(e) => setNewKrProgram(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Kegiatan</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Jaringan Irigasi"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newKrKegiatan}
+                    onChange={(e) => setNewKrKegiatan(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Sub Kegiatan Uraian</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Pemeliharaan Rutin"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newKrSubKegiatan}
+                    onChange={(e) => setNewKrSubKegiatan(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Jumlah Pagu (IDR)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    placeholder="Contoh: 15000000"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newKrPagu}
+                    onChange={(e) => setNewKrPagu(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Telah Terealisasi (IDR)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    placeholder="Contoh: 0"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newKrRealisasi}
+                    onChange={(e) => setNewKrRealisasi(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Keterangan Tambahan / Catatan</label>
+                <textarea
+                  placeholder="Isi rincian penugasan anggaran atau ketentuan belanja..."
+                  rows={2}
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newKrKeterangan}
+                  onChange={(e) => setNewKrKeterangan(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsKrModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
+                >
+                  {editingKrId ? 'Simpan Perubahan' : 'Simpan Rekening'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SPJ RUTIN MODAL */}
+      {isSpjModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100">
+            <div className="bg-slate-900 text-slate-100 p-4">
+              <h3 className="font-extrabold text-sm">{editingSpjId ? 'Edit Berkas SPJ Rutin' : 'Ajukan SPJ Pertanggungjawaban'}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Lengkapi rincian bukti kuitansi pertanggungjawaban dana rutinitas operasional</p>
+            </div>
+
+            <form onSubmit={handleSaveSpjRutin} className="p-5 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nomor SPJ / Bukti</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 001/SPJ-RUTIN/2026"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newSpjNomor}
+                    onChange={(e) => setNewSpjNomor(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tanggal Pengajuan</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newSpjTanggal}
+                    onChange={(e) => setNewSpjTanggal(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pos Anggaran Rekening</label>
+                  <select
+                    required
+                    className="w-full border border-slate-200 bg-white rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newSpjKodeRekeningId}
+                    onChange={(e) => setNewSpjKodeRekeningId(e.target.value)}
+                  >
+                    <option value="">Pilih Pos Kode Rekening</option>
+                    {kodeRekeningList.map((kr) => (
+                      <option key={kr.id} value={kr.id}>
+                        {kr.kode} - {kr.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nominal Belanja (IDR)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="Contoh: 1250000"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-extrabold"
+                    value={newSpjJumlah}
+                    onChange={(e) => setNewSpjJumlah(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Kegiatan Belanja</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Konsumsi rapat koordinasi dinas juru pengairan"
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newSpjNamaKegiatan}
+                  onChange={(e) => setNewSpjNamaKegiatan(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Pengajuan</label>
+                  <select
+                    className="w-full border border-slate-200 bg-white rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newSpjStatus}
+                    onChange={(e: any) => setNewSpjStatus(e.target.value)}
+                  >
+                    <option value="Draft">Draft (Belum Diajukan)</option>
+                    <option value="Diajukan">Diajukan Verifikasi</option>
+                    <option value="Disetujui">Disetujui Bendahara</option>
+                    <option value="Ditolak">Ditolak / Perbaikan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Kuitansi Lampiran (PDF/Gambar)</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    onChange={handleSpjFileUpload}
+                  />
+                </div>
+              </div>
+
+              {newSpjBerkasUrlList.length > 0 && (
+                <div>
+                  <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Berkas Terlampir ({newSpjBerkasUrlList.length})</span>
+                  <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 bg-slate-50 border border-slate-200/60 rounded-xl">
+                    {newSpjBerkasUrlList.map((url, i) => (
+                      <div key={i} className="flex items-center gap-1.5 bg-white border border-slate-200/50 px-2 py-1 rounded-lg">
+                        <Paperclip className="w-3 h-3 text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-600 truncate max-w-[80px]">File #{i+1}</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewSpjBerkasUrlList(prev => prev.filter((_, idx) => idx !== i))}
+                          className="text-rose-500 hover:text-rose-700 transition"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Keterangan Administrasi / Catatan Penolak</label>
+                <textarea
+                  placeholder="Catatan dari bendahara dinas atau rincian perbaikan berkas..."
+                  rows={2}
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newSpjKeterangan}
+                  onChange={(e) => setNewSpjKeterangan(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsSpjModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
+                >
+                  {editingSpjId ? 'Perbarui SPJ' : 'Simpan SPJ'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BAPP MODAL & LIVE INTERACTIVE CAMERA */}
+      {isBappModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+            <div className="bg-slate-900 text-slate-100 p-4">
+              <h3 className="font-extrabold text-sm">{editingBappId ? 'Edit BAPP Kontrak' : 'Buat Berita Acara BAPP Baru'}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Berita acara progres fisik konstruksi bendung, saluran irigasi, dan realisasi pembayaran</p>
+            </div>
+
+            <form onSubmit={handleSaveBapp} className="p-5 space-y-3.5 overflow-y-auto max-h-[calc(90vh-100px)]">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nomor BAPP</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 014/SDA/BAPP/2026"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newBappNomor}
+                    onChange={(e) => setNewBappNomor(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tanggal BAPP</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newBappTanggal}
+                    onChange={(e) => setNewBappTanggal(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nama Pekerjaan</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Pemeliharaan Saluran Sekunder"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newBappNamaPekerjaan}
+                    onChange={(e) => setNewBappNamaPekerjaan(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nomor SPK Kontrak Kerja</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: 602.1/045/SPK/UPTD-SDA/2026"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-mono"
+                    value={newBappNomorSpk}
+                    onChange={(e) => setNewBappNomorSpk(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Penyedia Jasa (Rekanan)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: CV. Tani Subur Makmur"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                    value={newBappNamaPenyedia}
+                    onChange={(e) => setNewBappNamaPenyedia(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nilai Kontrak Kemitraan (IDR)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="Contoh: 75000000"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newBappNilaiKontrak}
+                    onChange={(e) => setNewBappNilaiKontrak(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                  <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Progres Fisik Rencana (%)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      className="w-full accent-indigo-600"
+                      value={newBappProgresFisik}
+                      onChange={(e) => setNewBappProgresFisik(e.target.value)}
+                    />
+                    <span className="font-mono font-black text-slate-700 text-xs text-right w-10 shrink-0">{newBappProgresFisik}%</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Realisasi Dibayarkan (IDR)</label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    placeholder="Contoh: 37500000"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-extrabold text-emerald-800"
+                    value={newBappRealisasiPembayaran}
+                    onChange={(e) => setNewBappRealisasiPembayaran(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status Penyelesaian</label>
+                  <select
+                    className="w-full border border-slate-200 bg-white rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none font-bold"
+                    value={newBappStatus}
+                    onChange={(e: any) => setNewBappStatus(e.target.value)}
+                  >
+                    <option value="Dalam Proses">Dalam Proses (On Going)</option>
+                    <option value="Selesai">Selesai (PHO / 100%)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-sans">Unggah Foto Lapangan</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    onChange={handleBappFileUpload}
+                  />
+                </div>
+              </div>
+
+              {/* CAMERA INTEGRATION */}
+              <div className="border border-slate-200/80 p-3 rounded-2xl bg-slate-50/70 space-y-2.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
+                    Dokumentasi Kamera HP / Perangkat
+                  </span>
+                  <button
+                    type="button"
+                    onClick={isBappCameraActive ? stopBappCamera : startBappCamera}
+                    className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-2xs transition ${
+                      isBappCameraActive ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white hover:bg-slate-700'
+                    }`}
+                  >
+                    {isBappCameraActive ? 'Matikan Kamera' : 'Aktifkan Kamera'}
+                  </button>
+                </div>
+
+                {isBappCameraActive && (
+                  <div className="relative bg-slate-900 rounded-xl overflow-hidden aspect-video flex flex-col items-center justify-center border border-slate-800">
+                    <video id="bapp-camera-preview" className="w-full h-full object-cover" autoPlay playsInline muted />
+                    <button
+                      type="button"
+                      onClick={captureBappPhoto}
+                      className="absolute bottom-3 bg-white hover:bg-slate-100 text-slate-900 p-2.5 rounded-full shadow-lg border border-slate-200 transition active:scale-95"
+                    >
+                      <Camera className="w-5 h-5 text-indigo-700" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* DISPLAY CAPTURED/UPLOADED PHOTOS */}
+              {newBappFotoList.length > 0 && (
+                <div>
+                  <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Foto Lapangan Terlapir ({newBappFotoList.length})</span>
+                  <div className="grid grid-cols-4 gap-2 p-2.5 bg-slate-100/60 rounded-xl border border-dashed border-slate-250">
+                    {newBappFotoList.map((pic, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-lg border border-slate-200 overflow-hidden group shadow-2xs">
+                        <img src={pic} className="w-full h-full object-cover" alt="Lampiran" referrerPolicy="no-referrer" />
+                        <button
+                          type="button"
+                          onClick={() => setNewBappFotoList(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute -top-1 -right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 shadow-xs transition active:scale-90"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Uraian Keterangan Pekerjaan</label>
+                <textarea
+                  placeholder="Deskripsikan lokasi koordinat, keadaan di tempat atau kesesuaian spek..."
+                  rows={2}
+                  className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+                  value={newBappKeterangan}
+                  onChange={(e) => setNewBappKeterangan(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { stopBappCamera(); setIsBappModalOpen(false); }}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700"
+                >
+                  {editingBappId ? 'Simpan Perubahan' : 'Buat BAPP'}
                 </button>
               </div>
             </form>

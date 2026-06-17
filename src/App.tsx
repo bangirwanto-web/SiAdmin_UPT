@@ -9,10 +9,14 @@ import {
   DEFAULT_PEMBANGUNAN,
   DEFAULT_PERSONEL,
   DEFAULT_KEUANGAN,
+  DEFAULT_INVENTARIS_DI,
+  DEFAULT_USUL_OP,
+  DEFAULT_USUL_PEMB,
+  DEFAULT_PROGRES_LAPANGAN_PEMB,
   getFromStorage,
   saveToStorage 
 } from './utils/storage';
-import { ProfileSettings, User, Surat, InventarisAset, KegiatanOperasional, DebitAir, ProyekPembangunan, Personel, Keuangan } from './types';
+import { ProfileSettings, User, Surat, InventarisAset, KegiatanOperasional, DebitAir, ProyekPembangunan, Personel, Keuangan, InventarisDI, UsulKegiatan, ProgresPembangunanLapangan } from './types';
 
 // Importing Components
 import Login from './components/Login';
@@ -69,6 +73,22 @@ export default function App() {
     return getFromStorage<Keuangan[]>('sia_keuangan_list', DEFAULT_KEUANGAN);
   });
 
+  const [operasionalInventarisDiList, setOperasionalInventarisDiList] = useState<InventarisDI[]>(() => {
+    return getFromStorage<InventarisDI[]>('sia_operasional_inventaris_di_list', DEFAULT_INVENTARIS_DI);
+  });
+
+  const [operasionalUsulKegiatanList, setOperasionalUsulKegiatanList] = useState<UsulKegiatan[]>(() => {
+    return getFromStorage<UsulKegiatan[]>('sia_operasional_usul_kegiatan_list', DEFAULT_USUL_OP);
+  });
+
+  const [pembangunanUsulKegiatanList, setPembangunanUsulKegiatanList] = useState<UsulKegiatan[]>(() => {
+    return getFromStorage<UsulKegiatan[]>('sia_pembangunan_usul_kegiatan_list', DEFAULT_USUL_PEMB);
+  });
+
+  const [pembangunanProgresLapanganList, setPembangunanProgresLapanganList] = useState<ProgresPembangunanLapangan[]>(() => {
+    return getFromStorage<ProgresPembangunanLapangan[]>('sia_pembangunan_progres_lapangan_list', DEFAULT_PROGRES_LAPANGAN_PEMB);
+  });
+
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   // Sync state to local storage on edits
@@ -85,6 +105,26 @@ export default function App() {
   const handleUpdateKeuangan = (newKeuanganList: Keuangan[]) => {
     setKeuanganList(newKeuanganList);
     saveToStorage('sia_keuangan_list', newKeuanganList);
+  };
+
+  const handleUpdateOperasionalInventarisDi = (newList: InventarisDI[]) => {
+    setOperasionalInventarisDiList(newList);
+    saveToStorage('sia_operasional_inventaris_di_list', newList);
+  };
+
+  const handleUpdateOperasionalUsulKegiatan = (newList: UsulKegiatan[]) => {
+    setOperasionalUsulKegiatanList(newList);
+    saveToStorage('sia_operasional_usul_kegiatan_list', newList);
+  };
+
+  const handleUpdatePembangunanUsulKegiatan = (newList: UsulKegiatan[]) => {
+    setPembangunanUsulKegiatanList(newList);
+    saveToStorage('sia_pembangunan_usul_kegiatan_list', newList);
+  };
+
+  const handleUpdatePembangunanProgresLapangan = (newList: ProgresPembangunanLapangan[]) => {
+    setPembangunanProgresLapanganList(newList);
+    saveToStorage('sia_pembangunan_progres_lapangan_list', newList);
   };
 
   const handleUpdateUsers = (newUsersList: User[]) => {
@@ -209,6 +249,18 @@ export default function App() {
         );
       }
       case 'operasional':
+      case 'operasional-inventaris-di':
+      case 'operasional-data-kegiatan':
+      case 'operasional-progres-lapangan':
+      case 'operasional-usul-kegiatan': {
+        const subTabMapping: Record<string, 'inventaris-di' | 'data-kegiatan' | 'progres-lapangan' | 'usul-kegiatan'> = {
+          'operasional': 'inventaris-di',
+          'operasional-inventaris-di': 'inventaris-di',
+          'operasional-data-kegiatan': 'data-kegiatan',
+          'operasional-progres-lapangan': 'progres-lapangan',
+          'operasional-usul-kegiatan': 'usul-kegiatan',
+        };
+        const currentSubTab = subTabMapping[activeTab] || 'inventaris-di';
         return (
           <SeksiOperasional 
             currentUser={currentUser}
@@ -216,16 +268,44 @@ export default function App() {
             setOperasionalList={handleUpdateOperasional}
             debitList={debitList}
             setDebitList={handleUpdateDebit}
+            activeTabOverride={currentSubTab}
+            onSubTabChange={(subTab) => {
+              setActiveTab(`operasional-${subTab}`);
+            }}
+            inventarisDiList={operasionalInventarisDiList}
+            setInventarisDiList={handleUpdateOperasionalInventarisDi}
+            usulKegiatanList={operasionalUsulKegiatanList}
+            setUsulKegiatanList={handleUpdateOperasionalUsulKegiatan}
           />
         );
+      }
       case 'pembangunan':
+      case 'pembangunan-data-kegiatan':
+      case 'pembangunan-progres-lapangan':
+      case 'pembangunan-usul-kegiatan': {
+        const subTabMapping: Record<string, 'data-kegiatan' | 'progres-lapangan' | 'usul-kegiatan'> = {
+          'pembangunan': 'data-kegiatan',
+          'pembangunan-data-kegiatan': 'data-kegiatan',
+          'pembangunan-progres-lapangan': 'progres-lapangan',
+          'pembangunan-usul-kegiatan': 'usul-kegiatan',
+        };
+        const currentSubTab = subTabMapping[activeTab] || 'data-kegiatan';
         return (
           <SeksiPembangunan 
             currentUser={currentUser}
             pembangunanList={pembangunanList}
             setPembangunanList={handleUpdatePembangunan}
+            activeTabOverride={currentSubTab}
+            onSubTabChange={(subTab) => {
+              setActiveTab(`pembangunan-${subTab}`);
+            }}
+            usulKegiatanList={pembangunanUsulKegiatanList}
+            setUsulKegiatanList={handleUpdatePembangunanUsulKegiatan}
+            progresLapanganList={pembangunanProgresLapanganList}
+            setProgresLapanganList={handleUpdatePembangunanProgresLapangan}
           />
         );
+      }
       case 'pengaturan':
         return (
           <Pengaturan 
@@ -278,6 +358,10 @@ export default function App() {
                  activeTab === 'penatausahaan_personalia' || activeTab === 'penatausahaan-personalia' ? 'Penatausahaan / Personalia' :
                  activeTab === 'penatausahaan_aset' || activeTab === 'penatausahaan-aset' ? 'Penatausahaan / Aset & Inventaris' :
                  activeTab === 'penatausahaan_keuangan' || activeTab === 'penatausahaan-keuangan' ? 'Penatausahaan / Keuangan' :
+                 activeTab === 'operasional-inventaris-di' ? 'Seksi Operasional / Inventaris DI' :
+                 activeTab === 'operasional-data-kegiatan' ? 'Seksi Operasional / Data Kegiatan' :
+                 activeTab === 'operasional-progres-lapangan' ? 'Seksi Operasional / Progres Lapangan' :
+                 activeTab === 'operasional-usul-kegiatan' ? 'Seksi Operasional / Usul Kegiatan' :
                  activeTab}
               </span>
             </div>
