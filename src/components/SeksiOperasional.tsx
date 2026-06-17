@@ -497,9 +497,9 @@ export default function SeksiOperasional({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <span className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400">Pekerjaan & Data Lapangan UPTD</span>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">Seksi Operasional</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">Seksi Operasional & Pemeliharaan SDA</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Data Daerah Irigasi, pengawasan tinggi muka air (TMA), kegiatan O&amp;M, serta pendaftaran usulan kerja pemeliharaan.
+            Data Daerah Irigasi, Pemeliharaan Daerah Irigasi, kegiatan O&amp;P, serta pendaftaran usulan kerja pemeliharaan.
           </p>
         </div>
 
