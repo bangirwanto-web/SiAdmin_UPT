@@ -100,7 +100,7 @@ export default function Sidebar({ currentUser, activeTab, setActiveTab, onLogout
               )}
               <div className="min-w-0">
                 <h1 className="text-xs font-bold text-blue-50 line-clamp-1">{profile.shortName}</h1>
-                <p className="text-[9px] text-blue-300 font-medium uppercase tracking-wider">SIA UPTD PSA</p>
+                <p className="text-[9px] text-blue-300 font-medium uppercase tracking-wider">SIA UPTD PSDA</p>
               </div>
             </div>
             
