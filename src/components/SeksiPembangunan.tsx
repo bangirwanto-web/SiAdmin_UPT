@@ -303,7 +303,7 @@ export default function SeksiPembangunan({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <span className="text-[10px] uppercase font-extrabold tracking-widest text-slate-400">Pengadaan & Konstruksi Fisik</span>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">Seksi Pembangunan</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight mt-0.5">Seksi Pembangunan Infrastruktur SDA</h1>
           <p className="text-xs text-slate-500 mt-1">
             Rehabilitasi prasarana bendung besar, suplesi pengaliran sawah, serta monitoring kemajuan kontraktor di lapangan.
           </p>
