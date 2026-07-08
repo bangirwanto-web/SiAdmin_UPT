@@ -779,7 +779,7 @@ export default function SeksiOperasional({
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleEditKegiatanClick(item)}
-                          className="px-2.5 py-1 bg-slate-55 bg-slate-50 hover:bg-slate-100 rounded-lg text-[10px] font-bold text-slate-700 flex items-center gap-1 transition"
+                          className="px-2.5 py-1 bg-[#000000] hover:bg-slate-900 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition"
                           title="Edit"
                         >
                           <Edit className="w-3 h-3" /> Ubah
